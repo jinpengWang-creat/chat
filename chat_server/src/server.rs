@@ -8,7 +8,7 @@ use crate::{config::AppConfig, router::get_router};
 pub async fn run() -> Result<()> {
     let config = AppConfig::load()?;
 
-    let ip = &config.server.ip;
+    let ip = &config.server.host;
     let port = &config.server.port;
     let addr = format!("{}:{}", ip, port);
 

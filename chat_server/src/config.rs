@@ -25,7 +25,7 @@ pub struct AuthConfig {
 #[derive(Debug, Deserialize, Default)]
 pub struct ServerConfig {
     #[serde(default = "default_ip")]
-    pub ip: String,
+    pub host: String,
     #[serde(default = "default_port")]
     pub port: u16,
     #[serde(default = "default_db_url")]
