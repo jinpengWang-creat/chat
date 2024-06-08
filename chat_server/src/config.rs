@@ -6,17 +6,30 @@ use std::fs::File;
 
 #[derive(Debug, Deserialize)]
 pub struct AppConfig {
+    #[serde(default)]
     pub server: ServerConfig,
+
+    pub auth: AuthConfig,
+}
+
+#[derive(Debug, Deserialize, Default)]
+pub struct AuthConfig {
+    #[serde(default = "default_sk")]
+    pub sk: String,
+    #[serde(default = "default_pk")]
+    pub pk: String,
 }
 
 // default port is 8080
 // default ip is 0.0.0.0
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Default)]
 pub struct ServerConfig {
     #[serde(default = "default_ip")]
     pub ip: String,
     #[serde(default = "default_port")]
     pub port: u16,
+    #[serde(default = "default_db_url")]
+    pub db_url: String,
 }
 
 impl TryFrom<Config> for AppConfig {
@@ -25,7 +38,8 @@ impl TryFrom<Config> for AppConfig {
     fn try_from(config: Config) -> Result<Self, Self::Error> {
         // Convert the Config struct to AppConfig here
         let server = config.get::<ServerConfig>("server")?;
-        Ok(AppConfig { server })
+        let auth = config.get::<AuthConfig>("auth")?;
+        Ok(AppConfig { server, auth })
     }
 }
 
@@ -53,11 +67,29 @@ impl AppConfig {
 }
 
 fn default_port() -> u16 {
-    8080
+    6666
 }
 
 fn default_ip() -> String {
     "0.0.0.0".to_string()
+}
+
+fn default_db_url() -> String {
+    "postgres://postgres:postgres@localhost:5432/chat".to_string()
+}
+
+fn default_pk() -> String {
+    "-----BEGIN PUBLIC KEY-----
+MCowBQYDK2VwAyEAfM+lwNHj6TRJ3EGP38lIJcOo9Dlt2u2JzcwWMbu7jQY=
+-----END PUBLIC KEY-----"
+        .to_string()
+}
+
+fn default_sk() -> String {
+    "-----BEGIN PRIVATE KEY-----
+MC4CAQAwBQYDK2VwBCIEIDnxJGEJGoW+mNKHn4vRY1V6BQ3MglSQSuZ8featmyC4
+-----END PRIVATE KEY-----"
+        .to_string()
 }
 
 #[cfg(test)]
