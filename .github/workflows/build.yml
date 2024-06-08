@@ -14,23 +14,6 @@ permissions:
   contents: write
 
 jobs:
-  postgres-service:
-    strategy:
-      matrix:
-        platform: [ubuntu-latest]
-    runs-on: ${{ matrix.platform }}
-    services:
-      postgres:
-        image: postgres
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: postgres
-        ports:
-          - 5432:5432
-    steps:
-      - name: Wait for Postgres
-        run: dockerize -wait tcp://localhost:5432 -timeout 1m
   build-rust:
     strategy:
       matrix:
@@ -41,6 +24,8 @@ jobs:
         with:
           fetch-depth: 0
           submodules: recursive
+      - name: Install postgreSQL
+        run: sudo apt-get install postgresql
       - name: Install Rust
         run: rustup toolchain install stable --component llvm-tools-preview
       - name: Install cargo-llvm-cov
