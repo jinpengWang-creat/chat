@@ -7,17 +7,22 @@ edition = "2021"
 
 [dependencies]
 anyhow = { workspace = true }
+argon2 = { version = "0.5.3", features = ["std"] }
 axum = { version = "0.7.5", features = [
     "http2",
     "query",
     "tracing",
     "multipart",
 ] }
+chrono = { version = "0.4.38", features = ["serde"] }
 config = "0.14.0"
 serde = { workspace = true }
 serde_yaml = { workspace = true }
-sqlx = { workspace = true }
+sqlx = { workspace = true, features = ["postgres", "runtime-tokio", "tls-rustls"] }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
+
+[dev-dependencies]
+sqlx-db-tester = "0.4.2"
