@@ -37,6 +37,12 @@ pub enum AppError {
 
     #[error("email already exists: {0}")]
     EmailAlreadyExists(String),
+
+    #[error("Unauthorized")]
+    Unauthorized,
+
+    #[error("request header to str error: {0}")]
+    RequestHeaderToStr(#[from] axum::http::header::ToStrError),
 }
 
 impl IntoResponse for AppError {
@@ -52,6 +58,8 @@ impl IntoResponse for AppError {
             AppError::JsonRejection(_) => StatusCode::BAD_REQUEST,
             AppError::LoginFailed(_) => StatusCode::FORBIDDEN,
             AppError::EmailAlreadyExists(_) => StatusCode::CONFLICT,
+            AppError::Unauthorized => StatusCode::UNAUTHORIZED,
+            AppError::RequestHeaderToStr(_) => StatusCode::BAD_REQUEST,
         };
 
         (status, Json(ErrorOutput::new(self.to_string()))).into_response()

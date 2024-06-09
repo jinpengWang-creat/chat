@@ -1,13 +1,15 @@
-use axum::response::IntoResponse;
+use axum::{response::IntoResponse, Extension, Json};
+
+use crate::User;
 
 pub async fn create_chat_handler() -> impl IntoResponse {
     // handle create chat here
     "create chat"
 }
 
-pub async fn list_chat_handler() -> impl IntoResponse {
+pub async fn list_chat_handler(Extension(user): Extension<User>) -> impl IntoResponse {
     // handle list chat here
-    "list chat"
+    Json(user)
 }
 
 pub async fn update_chat_handler() -> impl IntoResponse {
