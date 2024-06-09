@@ -22,30 +22,47 @@ pub struct AppStateInner {
     pub pool: PgPool,
 }
 
-impl AppStateInner {
-    async fn try_new(config: AppConfig) -> Result<Self, AppError> {
-        let dk = DecodingKey::load(&config.auth.sk).context("load pk failed")?;
-        let ek = EncodingKey::load(&config.auth.pk).context("loan sk failed")?;
+impl AppState {
+    pub async fn try_new(config: AppConfig) -> Result<Self, AppError> {
+        let dk = DecodingKey::load(&config.auth.pk).context("load pk failed")?;
+        let ek = EncodingKey::load(&config.auth.sk).context("loan sk failed")?;
         let pool = PgPool::connect(&config.server.db_url)
             .await
             .context("connect to db failed")?;
         Ok(Self {
-            config,
-            dk,
-            ek,
-            pool,
+            inner: Arc::new(AppStateInner {
+                config,
+                dk,
+                ek,
+                pool,
+            }),
         })
     }
 }
 
+#[cfg(test)]
 impl AppState {
-    pub async fn try_new(config: AppConfig) -> Result<Self, AppError> {
-        Ok(Self {
-            inner: Arc::new(AppStateInner::try_new(config).await?),
-        })
+    pub async fn new_for_test(
+        config: AppConfig,
+    ) -> Result<(sqlx_db_tester::TestPg, Self), AppError> {
+        use sqlx_db_tester::TestPg;
+        use std::path::Path;
+        let dk = DecodingKey::load(&config.auth.pk).context("load pk failed")?;
+        let ek = EncodingKey::load(&config.auth.sk).context("loan sk failed")?;
+        let server_url = config.server.db_url.rsplit_once('/').unwrap_or_default();
+        let tdb = TestPg::new(server_url.0.to_string(), Path::new("../migrations"));
+        let pool = tdb.get_pool().await;
+        let state = Self {
+            inner: Arc::new(AppStateInner {
+                config,
+                dk,
+                ek,
+                pool,
+            }),
+        };
+        Ok((tdb, state))
     }
 }
-
 impl Deref for AppState {
     type Target = AppStateInner;
 

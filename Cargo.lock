@@ -336,6 +336,7 @@ dependencies = [
  "axum-macros",
  "chrono",
  "config",
+ "http-body-util",
  "jwt-simple",
  "serde",
  "serde_json",

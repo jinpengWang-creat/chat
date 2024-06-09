@@ -1,2 +1,21 @@
 ### chat api
 GET http://localhost:8080/api/chat
+
+### signup user
+POST http://localhost:8080/api/signup
+Content-Type: application/json
+
+{
+    "fullname": "jim",
+    "email": "jim@122.com",
+    "password": "123456"
+}
+
+### signin user
+POST http://localhost:8080/api/signin
+Content-Type: application/json
+
+{
+    "email": "jim@122.com",
+    "password": "123456"
+}

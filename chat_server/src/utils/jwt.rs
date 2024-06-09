@@ -28,11 +28,13 @@ impl DecodingKey {
         Ok(DecodingKey(Ed25519PublicKey::from_pem(pem)?))
     }
 
-    #[allow(unused, clippy::field_reassign_with_default)]
+    #[allow(unused)]
     pub fn verify(&self, token: &str) -> Result<User, AppError> {
-        let mut options = VerificationOptions::default();
-        options.allowed_issuers = Some(HashSet::from_strings(&[JWT_ISS]));
-        options.allowed_audiences = Some(HashSet::from_strings(&[JWT_AUD]));
+        let mut options = VerificationOptions {
+            allowed_issuers: Some(HashSet::from_strings(&[JWT_ISS])),
+            allowed_audiences: Some(HashSet::from_strings(&[JWT_AUD])),
+            ..Default::default()
+        };
 
         let claims = self.0.verify_token::<User>(token, Some(options))?;
         Ok(claims.custom)

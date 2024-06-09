@@ -1,6 +1,19 @@
 use axum::{extract::rejection::JsonRejection, response::IntoResponse};
-use serde_json::json;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ErrorOutput {
+    error: String,
+}
+
+impl ErrorOutput {
+    pub fn new(error: impl Into<String>) -> Self {
+        Self {
+            error: error.into(),
+        }
+    }
+}
 
 #[derive(Error, Debug)]
 pub enum AppError {
@@ -21,6 +34,9 @@ pub enum AppError {
 
     #[error("login failed: {0}")]
     LoginFailed(String),
+
+    #[error("email already exists: {0}")]
+    EmailAlreadyExists(String),
 }
 
 impl IntoResponse for AppError {
@@ -35,8 +51,9 @@ impl IntoResponse for AppError {
             AppError::Anyhow(_) => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::JsonRejection(_) => StatusCode::BAD_REQUEST,
             AppError::LoginFailed(_) => StatusCode::FORBIDDEN,
+            AppError::EmailAlreadyExists(_) => StatusCode::CONFLICT,
         };
 
-        (status, Json(json!({ "error": self.to_string() }))).into_response()
+        (status, Json(ErrorOutput::new(self.to_string()))).into_response()
     }
 }

@@ -8,13 +8,13 @@ use sqlx::PgPool;
 use crate::{error::AppError, User};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct UserLogin {
+pub struct SigninUser {
     pub email: String,
     pub password: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct UserRegister {
+pub struct SignupUser {
     pub fullname: String,
     pub email: String,
     pub password: String,
@@ -30,7 +30,11 @@ impl User {
         Ok(user)
     }
 
-    pub async fn create_user(input: &UserRegister, pool: &PgPool) -> Result<Self, AppError> {
+    pub async fn create_user(input: &SignupUser, pool: &PgPool) -> Result<Self, AppError> {
+        // check is the email already exists
+        if Self::find_by_email(&input.email, pool).await?.is_some() {
+            return Err(AppError::EmailAlreadyExists(input.email.clone()));
+        }
         let password_hash = hash_password(&input.password)?;
 
         let user = sqlx::query_as("INSERT INTO users (fullname, email, password_hash) VALUES ($1, $2, $3) RETURNING id, fullname, email, created_at")
@@ -42,7 +46,7 @@ impl User {
         Ok(user)
     }
 
-    pub async fn verify(input: &UserLogin, pool: &PgPool) -> Result<Option<Self>, AppError> {
+    pub async fn verify(input: &SigninUser, pool: &PgPool) -> Result<Option<Self>, AppError> {
         let mut user = sqlx::query_as(
             "SELECT id, fullname, email, password_hash, created_at FROM users WHERE email = $1",
         )
@@ -91,7 +95,7 @@ fn verify_password(password: &str, password_hash: &str) -> Result<bool, AppError
 }
 
 #[cfg(test)]
-impl UserLogin {
+impl SigninUser {
     pub fn new(email: &str, password: &str) -> Self {
         Self {
             email: email.to_string(),
@@ -101,7 +105,7 @@ impl UserLogin {
 }
 
 #[cfg(test)]
-impl UserRegister {
+impl SignupUser {
     pub fn new(fullname: &str, email: &str, password: &str) -> Self {
         Self {
             fullname: fullname.to_string(),
@@ -138,32 +142,32 @@ mod tests {
         Ok(())
     }
 
-    // use sqlx_db_tester::TestPg;
-    // use std::path::Path;
-    // #[tokio::test]
-    // async fn create_and_verify_user_should_work() -> Result<()> {
-    //     let pool = TestPg::new(
-    //         "postgres://postgres:postgres@localhost:5432".to_string(),
-    //         Path::new("../migrations"),
-    //     );
-    //     let pool = pool.get_pool().await;
-    //     let input = UserRegister::new("tom", "tom@123.com", "1qa2ws3ed");
-    //     let user = User::create_user(&input, &pool).await?;
-    //     assert_eq!(user.fullname, input.fullname);
-    //     assert_eq!(user.email, input.email);
-    //     assert!(user.id > 0);
+    use sqlx_db_tester::TestPg;
+    use std::path::Path;
+    #[tokio::test]
+    async fn create_and_verify_user_should_work() -> Result<()> {
+        let pool = TestPg::new(
+            "postgres://postgres:postgres@localhost:5432".to_string(),
+            Path::new("../migrations"),
+        );
+        let pool = pool.get_pool().await;
+        let input = SignupUser::new("tom", "tom@123.com", "1qa2ws3ed");
+        let user = User::create_user(&input, &pool).await?;
+        assert_eq!(user.fullname, input.fullname);
+        assert_eq!(user.email, input.email);
+        assert!(user.id > 0);
 
-    //     let user = User::find_by_email(&input.email, &pool).await?;
-    //     assert!(user.is_some());
-    //     let user = user.unwrap();
-    //     assert_eq!(user.fullname, input.fullname);
-    //     assert_eq!(user.email, input.email);
-    //     assert!(user.id > 0);
+        let user = User::find_by_email(&input.email, &pool).await?;
+        assert!(user.is_some());
+        let user = user.unwrap();
+        assert_eq!(user.fullname, input.fullname);
+        assert_eq!(user.email, input.email);
+        assert!(user.id > 0);
 
-    //     let input = UserLogin::new(&input.email, &input.password);
-    //     let user = User::verify(&input, &pool).await?;
-    //     assert!(user.is_some());
+        let input = SigninUser::new(&input.email, &input.password);
+        let user = User::verify(&input, &pool).await?;
+        assert!(user.is_some());
 
-    //     Ok(())
-    // }
+        Ok(())
+    }
 }
