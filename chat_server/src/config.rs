@@ -1,14 +1,17 @@
-use anyhow::{anyhow, Result};
+use anyhow::{Context, Result};
 use config::{builder::DefaultState, Config, ConfigBuilder};
 use serde::Deserialize;
 use std::convert::TryFrom;
 use std::fs::File;
+
+use crate::error::AppError;
 
 #[derive(Debug, Deserialize)]
 pub struct AppConfig {
     #[serde(default)]
     pub server: ServerConfig,
 
+    #[serde(default)]
     pub auth: AuthConfig,
 }
 
@@ -33,12 +36,16 @@ pub struct ServerConfig {
 }
 
 impl TryFrom<Config> for AppConfig {
-    type Error = Box<dyn std::error::Error>;
+    type Error = AppError;
 
     fn try_from(config: Config) -> Result<Self, Self::Error> {
         // Convert the Config struct to AppConfig here
-        let server = config.get::<ServerConfig>("server")?;
-        let auth = config.get::<AuthConfig>("auth")?;
+        let server = config
+            .get::<ServerConfig>("server")
+            .context("parse server config failed!")?;
+        let auth = config
+            .get::<AuthConfig>("auth")
+            .context("parse auth config failed!")?;
         Ok(AppConfig { server, auth })
     }
 }
@@ -50,7 +57,7 @@ impl AppConfig {
     // 3. load from etc/app/config.yml
     // 4. load from env
     // 4 is the highest priority and 1 is the lowest priority
-    pub fn load() -> Result<Self> {
+    pub fn load() -> Result<Self, AppError> {
         let mut builder = ConfigBuilder::<DefaultState>::default();
         if File::open("config.yml").is_ok() {
             builder = builder.add_source(config::File::with_name("config"));
@@ -60,9 +67,7 @@ impl AppConfig {
         }
         builder = builder.add_source(config::Environment::default());
         let config = builder.build().unwrap();
-        config
-            .try_into()
-            .map_err(|e| anyhow!(format!("parse config error: {:?}", e)))
+        config.try_into()
     }
 }
 

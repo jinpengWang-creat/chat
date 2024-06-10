@@ -1,10 +1,21 @@
-use axum::{response::IntoResponse, Extension, Json};
+use axum::{extract::State, response::IntoResponse, Extension, Json};
 
-use crate::User;
+use crate::{
+    error::AppError,
+    models::{Chat, CreateChat},
+    state::AppState,
+    User,
+};
 
-pub async fn create_chat_handler() -> impl IntoResponse {
+use super::AppJson;
+
+pub async fn create_chat_handler(
+    State(app_state): State<AppState>,
+    AppJson(create_chat): AppJson<CreateChat>,
+) -> Result<impl IntoResponse, AppError> {
     // handle create chat here
-    "create chat"
+    let chat = Chat::create_chat(create_chat, &app_state.pool).await?;
+    Ok(Json(chat))
 }
 
 pub async fn list_chat_handler(Extension(user): Extension<User>) -> impl IntoResponse {

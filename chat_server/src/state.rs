@@ -78,3 +78,16 @@ impl Debug for AppStateInner {
             .finish()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_split_db_url() {
+        let config = AppConfig::load().unwrap();
+        let server_url = config.server.db_url.rsplit_once('/').unwrap_or_default();
+        assert_eq!(server_url.0, "postgres://postgres:postgres@localhost:5432");
+        assert_eq!(server_url.1, "chat");
+    }
+}

@@ -17,6 +17,9 @@ impl ErrorOutput {
 
 #[derive(Error, Debug)]
 pub enum AppError {
+    #[error("config error: {0}")]
+    Config(#[from] config::ConfigError),
+
     #[error("sqlx error: {0}")]
     Sqlx(#[from] sqlx::Error),
 
@@ -51,6 +54,7 @@ impl IntoResponse for AppError {
         use axum::response::Json;
 
         let status = match &self {
+            AppError::Config(_) => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::Sqlx(_) => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::PasswordHash(_) => StatusCode::UNPROCESSABLE_ENTITY,
             AppError::Jwt(_) => StatusCode::FORBIDDEN,
