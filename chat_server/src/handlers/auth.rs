@@ -35,7 +35,7 @@ pub async fn signup_handler(
     State(state): State<AppState>,
     AppJson(input): AppJson<SignupUser>,
 ) -> Result<impl IntoResponse, AppError> {
-    let user = User::create_user(&input, &state.pool).await?;
+    let user = User::create(&input, &state.pool).await?;
     let token = state.ek.sign(user)?;
     Ok((StatusCode::CREATED, Json(AuthOutput { token })))
 }

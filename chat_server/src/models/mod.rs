@@ -4,6 +4,7 @@ use sqlx::prelude::{FromRow, Type};
 
 mod chat;
 mod user;
+mod workspace;
 pub use chat::CreateChat;
 pub use user::{SigninUser, SignupUser};
 
@@ -15,6 +16,22 @@ pub struct User {
     #[sqlx(default)]
     #[serde(skip)]
     password_hash: Option<String>,
+    created_at: DateTime<Utc>,
+    ws_id: i64,
+}
+
+#[derive(Debug, Clone, Serialize, FromRow, Deserialize, PartialEq)]
+pub struct ChatUser {
+    id: i64,
+    fullname: String,
+    email: String,
+}
+
+#[derive(Debug, Clone, Serialize, FromRow, Deserialize, PartialEq)]
+pub struct Workspace {
+    id: i64,
+    name: String,
+    owner_id: i64,
     created_at: DateTime<Utc>,
 }
 

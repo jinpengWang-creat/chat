@@ -50,7 +50,7 @@ mod tests {
         let ek = EncodingKey::load(include_str!("../../fixtures/encoding.pem"))?;
         let pk = DecodingKey::load(include_str!("../../fixtures/decoding.pem"))?;
 
-        let user = User::new(1, "tom", "tom@123.com");
+        let user = User::new(1, "tom", "tom@123.com", 0);
 
         let token = ek.sign(user.clone())?;
         let user2 = pk.verify(&token)?;
