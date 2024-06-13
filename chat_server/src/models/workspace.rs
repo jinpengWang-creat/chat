@@ -56,7 +56,7 @@ mod tests {
 
         let workspace = Workspace::create("test", user.id as u64, &pool).await?;
         assert_eq!(workspace.name, "test");
-        assert_eq!(workspace.owner_id, user.id as i64);
+        assert_eq!(workspace.owner_id, user.id);
         Ok(())
     }
 }
