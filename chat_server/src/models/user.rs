@@ -7,12 +7,13 @@ use sqlx::PgPool;
 
 use crate::{error::AppError, User};
 
-use super::{ChatUser, Workspace};
+use super::Workspace;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SigninUser {
     pub email: String,
     pub password: String,
+    pub ws_id: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -70,7 +71,12 @@ impl User {
                 if verify_password(&input.password, password_hash)? {
                     if let Some(u) = user.as_mut() {
                         u.password_hash = None;
+                        if u.ws_id != input.ws_id {
+                            u.ws_id = input.ws_id;
+                            u.add_to_workspace(input.ws_id, pool).await?;
+                        }
                     }
+
                     Ok(user)
                 } else {
                     Ok(None)
@@ -80,17 +86,9 @@ impl User {
         }
     }
 
-    pub async fn fetch_all_chat_users(&self, pool: &PgPool) -> Result<Vec<ChatUser>, AppError> {
-        let users = sqlx::query_as("SELECT id, fullname, email FROM users WHERE ws_id = $1")
-            .bind(self.ws_id)
-            .fetch_all(pool)
-            .await?;
-        Ok(users)
-    }
-
     pub async fn add_to_workspace(&self, ws_id: i64, pool: &PgPool) -> Result<Self, AppError> {
         let user = sqlx::query_as(
-            "UPDATE users SET ws_id = $1 WHERE id = $2 and ws_id = 0 RETURNING id, ws_id, fullname, email, created_at",
+            "UPDATE users SET ws_id = $1 WHERE id = $2  RETURNING id, ws_id, fullname, email, created_at",
         )
         .bind(ws_id)
         .bind(self.id)
@@ -124,10 +122,11 @@ fn verify_password(password: &str, password_hash: &str) -> Result<bool, AppError
 
 #[cfg(test)]
 impl SigninUser {
-    pub fn new(email: &str, password: &str) -> Self {
+    pub fn new(email: &str, password: &str, ws_id: i64) -> Self {
         Self {
             email: email.to_string(),
             password: password.to_string(),
+            ws_id,
         }
     }
 }
@@ -164,6 +163,29 @@ mod tests {
     use super::*;
     use anyhow::Result;
 
+    #[tokio::test]
+    async fn find_by_email_should_work() -> Result<()> {
+        let pool = TestPg::new(
+            "postgres://postgres:postgres@localhost:5432".to_string(),
+            Path::new("../migrations"),
+        );
+        let pool = pool.get_pool().await;
+
+        let email = "jim@123.com";
+        let user = User::find_by_email(email, &pool).await?;
+        assert!(user.is_none());
+
+        let user = SignupUser::new("jim", "jim@123.com", "1qa2ws3ed");
+        User::create(&user, &pool).await?;
+
+        let user = User::find_by_email(email, &pool).await?;
+        assert!(user.is_some());
+        let user = user.unwrap();
+        assert_eq!(user.email, email);
+
+        Ok(())
+    }
+
     #[test]
     fn hash_password_and_verify_should_work() -> Result<()> {
         let password = "password";
@@ -194,9 +216,31 @@ mod tests {
         assert_eq!(user.email, input.email);
         assert!(user.id > 0);
 
-        let input = SigninUser::new(&input.email, &input.password);
+        let input = SigninUser::new(&input.email, &input.password, 0);
         let user = User::verify(&input, &pool).await?;
         assert!(user.is_some());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn add_to_workspace_should_work() -> Result<()> {
+        let pool = TestPg::new(
+            "postgres://postgres:postgres@localhost:5432".to_string(),
+            Path::new("../migrations"),
+        );
+        let pool = pool.get_pool().await;
+        let ws = Workspace::create("add_to_workspace_should_work", 0, &pool).await?;
+
+        let user = SignupUser::new("jim", "jim@123.com", "1qa2ws3ed");
+        let user = User::create(&user, &pool).await?;
+
+        let signin_user = SigninUser::new(&user.email, "1qa2ws3ed", ws.id);
+
+        let user = User::verify(&signin_user, &pool).await?;
+        assert!(user.is_some());
+        let user = user.unwrap();
+        assert_eq!(user.ws_id, ws.id);
 
         Ok(())
     }

@@ -7,9 +7,10 @@ POST http://localhost:8080/api/signup
 Content-Type: application/json
 
 {
-    "fullname": "j1im",
-    "email": "jim1@122.com",
-    "password": "123456"
+    "fullname": "jack1",
+    "email": "jack1@122.com",
+    "password": "123456",
+    "workspace": "jack"
 }
 
 ### signin user
@@ -18,8 +19,14 @@ POST http://localhost:8080/api/signin
 Content-Type: application/json
 
 {
-    "email": "jim@122.com",
-    "password": "123456"
+    "email": "jack@122.com",
+    "password": "123456",
+    "ws_id": 1
 }
 
 @token = {{signin.response.body.token}}
+
+
+### get users
+GET http://localhost:8080/api/users
+Authorization: Bearer {{token}}

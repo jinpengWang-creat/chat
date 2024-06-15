@@ -1,12 +1,14 @@
 mod auth;
 mod chat;
 mod message;
+mod workspace;
 
 pub use auth::*;
 use axum::response::IntoResponse;
 use axum_macros::FromRequest;
 pub use chat::*;
 pub use message::*;
+pub use workspace::*;
 
 use crate::error::AppError;
 

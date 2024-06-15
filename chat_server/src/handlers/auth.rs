@@ -79,7 +79,7 @@ mod test {
         let input = SignupUser::new(name, email, password);
         signup_handler(State(state.clone()), AppJson(input)).await?;
 
-        let input = SigninUser::new(email, password);
+        let input = SigninUser::new(email, password, 0);
         let res = signin_handler(State(state.clone()), AppJson(input))
             .await?
             .into_response();

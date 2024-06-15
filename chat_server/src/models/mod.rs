@@ -10,14 +10,14 @@ pub use user::{SigninUser, SignupUser};
 
 #[derive(Debug, Clone, Serialize, FromRow, Deserialize, PartialEq)]
 pub struct User {
-    id: i64,
-    fullname: String,
-    email: String,
+    pub id: i64,
+    pub fullname: String,
+    pub email: String,
     #[sqlx(default)]
     #[serde(skip)]
-    password_hash: Option<String>,
-    created_at: DateTime<Utc>,
-    ws_id: i64,
+    pub password_hash: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub ws_id: i64,
 }
 
 #[derive(Debug, Clone, Serialize, FromRow, Deserialize, PartialEq)]
