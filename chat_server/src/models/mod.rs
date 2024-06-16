@@ -48,7 +48,7 @@ pub enum ChatType {
 pub struct Chat {
     pub id: i64,
     pub ws_id: i64,
-    pub name: String,
+    pub name: Option<String>,
     pub r#type: ChatType,
     pub members: Vec<i64>,
     pub created_at: DateTime<Utc>,

@@ -7,7 +7,7 @@ use sqlx::PgPool;
 
 use crate::{error::AppError, User};
 
-use super::Workspace;
+use super::{ChatUser, Workspace};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SigninUser {
@@ -95,6 +95,16 @@ impl User {
         .fetch_one(pool)
         .await?;
         Ok(user)
+    }
+}
+
+impl ChatUser {
+    pub async fn fetch_all_by_ids(ids: &[i64], pool: &PgPool) -> Result<Vec<Self>, AppError> {
+        let users = sqlx::query_as("SELECT id, fullname, email FROM users WHERE id = ANY($1)")
+            .bind(ids)
+            .fetch_all(pool)
+            .await?;
+        Ok(users)
     }
 }
 

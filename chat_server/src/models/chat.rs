@@ -1,32 +1,239 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 
 use crate::error::AppError;
 
-use super::{Chat, ChatType};
+use super::{Chat, ChatType, ChatUser};
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Default, Clone, Serialize)]
 pub struct CreateChat {
-    pub name: String,
-    pub chat_type: ChatType,
+    pub name: Option<String>,
     pub members: Vec<i64>,
+    pub ws_id: i64,
+    pub public: bool,
 }
 
 impl Chat {
-    pub async fn create_chat(
-        create_chat: CreateChat,
-        ws_id: i64,
-        pool: &PgPool,
-    ) -> Result<Self, AppError> {
+    pub async fn create_chat(create_chat: CreateChat, pool: &PgPool) -> Result<Self, AppError> {
+        let len = create_chat.members.len();
+        if len < 2 {
+            return Err(AppError::CreateChat(
+                "At least 2 members are required".to_string(),
+            ));
+        }
+
+        if len > 8 && create_chat.name.is_none() {
+            return Err(AppError::CreateChat(
+                "Group chat with more than 8 members must have a name".to_string(),
+            ));
+        }
+
+        // verify if all members exist
+        let users = ChatUser::fetch_all_by_ids(&create_chat.members, pool).await?;
+        if users.len() != len {
+            return Err(AppError::CreateChat(
+                "Some members do not exists".to_string(),
+            ));
+        }
+
+        let chat_type = match (&create_chat.name, len) {
+            (None, 2) => ChatType::Single,
+            (None, _) => ChatType::Group,
+            (Some(_), _) => {
+                if create_chat.public {
+                    ChatType::PublicChannel
+                } else {
+                    ChatType::PrivateChannel
+                }
+            }
+        };
+
         let chat: Chat = sqlx::query_as(
-            "INSERT INTO chats (name, type, members, ws_id) VALUES ($1, $2, $3, $4) RETURNING *",
+            "INSERT INTO chats (ws_id, name, type, members) VALUES ($1, $2, $3, $4) RETURNING *",
         )
-        .bind(&create_chat.name)
-        .bind(&create_chat.chat_type)
-        .bind(&create_chat.members)
-        .bind(ws_id)
+        .bind(create_chat.ws_id)
+        .bind(create_chat.name)
+        .bind(chat_type)
+        .bind(create_chat.members)
         .fetch_one(pool)
         .await?;
         Ok(chat)
+    }
+
+    #[allow(dead_code)]
+    pub async fn fetch_all_by_ws_id(ws_id: u64, pool: &PgPool) -> Result<Vec<Self>, AppError> {
+        let chats = sqlx::query_as("SELECT * FROM chats WHERE ws_id = $1")
+            .bind(ws_id as i64)
+            .fetch_all(pool)
+            .await?;
+        Ok(chats)
+    }
+
+    #[allow(dead_code)]
+    pub async fn get_by_id(id: i64, pool: &PgPool) -> Result<Option<Self>, AppError> {
+        let chat = sqlx::query_as(
+            r#"
+                    SELECT id, ws_id, name, type, members, created_at
+                    FROM chats
+                    WHERE id = $1"#,
+        )
+        .bind(id)
+        .fetch_optional(pool)
+        .await?;
+        Ok(chat)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{error::AppError, test_util::get_test_pool};
+
+    #[tokio::test]
+    async fn create_chat_shourld_error() -> Result<(), AppError> {
+        let (_test, pool) = get_test_pool(None).await;
+        let members_less_2_chat = CreateChat {
+            name: None,
+            members: vec![1],
+            ws_id: 1,
+            public: false,
+        };
+        let ret = Chat::create_chat(members_less_2_chat, &pool).await;
+        assert!(ret.is_err());
+        let err = ret.unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            "create chat error: At least 2 members are required"
+        );
+
+        let members_more_8_and_no_name_chat = CreateChat {
+            name: None,
+            members: vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+            ws_id: 1,
+            public: false,
+        };
+        let ret = Chat::create_chat(members_more_8_and_no_name_chat, &pool).await;
+        assert!(ret.is_err());
+        let err = ret.unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            "create chat error: Group chat with more than 8 members must have a name"
+        );
+
+        let members_not_exist_chat = CreateChat {
+            name: None,
+            members: vec![111, 2, 3],
+            ws_id: 1,
+            public: false,
+        };
+        let ret = Chat::create_chat(members_not_exist_chat, &pool).await;
+        assert!(ret.is_err());
+        let err = ret.unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            "create chat error: Some members do not exists"
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn create_public_chat_shourld_work() -> Result<(), AppError> {
+        let (_test, pool) = get_test_pool(None).await;
+
+        let have_name_and_public_chat = CreateChat {
+            name: Some("test".to_string()),
+            members: vec![1, 2, 3],
+            ws_id: 1,
+            public: true,
+        };
+        let chat = Chat::create_chat(have_name_and_public_chat, &pool).await;
+        assert!(chat.is_ok());
+        let chat = chat.unwrap();
+        assert_eq!(chat.members.len(), 3);
+        assert_eq!(chat.ws_id, 1);
+        assert_eq!(chat.r#type, ChatType::PublicChannel);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn create_private_chat_shourld_work() -> Result<(), AppError> {
+        let (_test, pool) = get_test_pool(None).await;
+        let have_name_and_private_chat = CreateChat {
+            name: Some("test".to_string()),
+            members: vec![1, 2, 3],
+            ws_id: 1,
+            public: false,
+        };
+        let chat = Chat::create_chat(have_name_and_private_chat, &pool).await;
+        assert!(chat.is_ok());
+        let chat = chat.unwrap();
+        assert_eq!(chat.members.len(), 3);
+        assert_eq!(chat.ws_id, 1);
+        assert_eq!(chat.r#type, ChatType::PrivateChannel);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn create_noname_group_chat_shourld_work() -> Result<(), AppError> {
+        let (_test, pool) = get_test_pool(None).await;
+        let member_greater_2_and_no_name_chat = CreateChat {
+            name: None,
+            members: vec![1, 2, 3],
+            ws_id: 1,
+            public: false,
+        };
+        let chat = Chat::create_chat(member_greater_2_and_no_name_chat, &pool).await;
+        assert!(chat.is_ok());
+        let chat = chat.unwrap();
+        assert_eq!(chat.members.len(), 3);
+        assert_eq!(chat.ws_id, 1);
+        assert_eq!(chat.r#type, ChatType::Group);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn create_noname_single_chat_shourld_work() -> Result<(), AppError> {
+        let (_test, pool) = get_test_pool(None).await;
+        let member_2_and_no_name_chat = CreateChat {
+            name: None,
+            members: vec![1, 2],
+            ws_id: 1,
+            public: false,
+        };
+        let chat = Chat::create_chat(member_2_and_no_name_chat, &pool).await;
+        println!("{:?}", chat);
+        assert!(chat.is_ok());
+        let chat = chat.unwrap();
+        assert_eq!(chat.members.len(), 2);
+        assert_eq!(chat.ws_id, 1);
+        assert_eq!(chat.r#type, ChatType::Single);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn fetch_all_by_ws_id_shourld_work() -> Result<(), AppError> {
+        let (_test, pool) = get_test_pool(None).await;
+        let chats = Chat::fetch_all_by_ws_id(1, &pool).await?;
+        assert_eq!(chats.len(), 3);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn get_by_id_shourld_work() -> Result<(), AppError> {
+        let (_test, pool) = get_test_pool(None).await;
+        let chat = Chat::get_by_id(1, &pool).await?;
+        assert!(chat.is_some());
+        let chat = chat.unwrap();
+        assert_eq!(chat.id, 1);
+        assert_eq!(chat.ws_id, 1);
+        assert_eq!(chat.name, Some("general".to_string()));
+        assert_eq!(chat.r#type, ChatType::PublicChannel);
+        assert_eq!(chat.members.len(), 5);
+        assert_eq!(chat.members, vec![1, 2, 3, 4, 5]);
+
+        Ok(())
     }
 }

@@ -23,6 +23,12 @@ pub enum AppError {
     #[error("sqlx error: {0}")]
     Sqlx(#[from] sqlx::Error),
 
+    #[error("create chat error: {0}")]
+    CreateChat(String),
+
+    #[error("chat not found error: {0}")]
+    NotFound(String),
+
     #[error("password hash error: {0}")]
     PasswordHash(#[from] argon2::password_hash::Error),
 
@@ -64,6 +70,8 @@ impl IntoResponse for AppError {
             AppError::EmailAlreadyExists(_) => StatusCode::CONFLICT,
             AppError::Unauthorized => StatusCode::UNAUTHORIZED,
             AppError::RequestHeaderToStr(_) => StatusCode::BAD_REQUEST,
+            AppError::CreateChat(_) => StatusCode::BAD_REQUEST,
+            AppError::NotFound(_) => StatusCode::NOT_FOUND,
         };
 
         (status, Json(ErrorOutput::new(self.to_string()))).into_response()
