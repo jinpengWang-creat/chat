@@ -13,13 +13,18 @@ pub struct CreateChat {
 }
 
 impl Chat {
-    pub async fn create_chat(create_chat: CreateChat, pool: &PgPool) -> Result<Self, AppError> {
+    pub async fn create_chat(
+        create_chat: CreateChat,
+        ws_id: i64,
+        pool: &PgPool,
+    ) -> Result<Self, AppError> {
         let chat: Chat = sqlx::query_as(
-            "INSERT INTO chats (name, chat_type, members) VALUES ($1, $2, $3) RETURNING *",
+            "INSERT INTO chats (name, type, members, ws_id) VALUES ($1, $2, $3, $4) RETURNING *",
         )
         .bind(&create_chat.name)
         .bind(&create_chat.chat_type)
         .bind(&create_chat.members)
+        .bind(ws_id)
         .fetch_one(pool)
         .await?;
         Ok(chat)

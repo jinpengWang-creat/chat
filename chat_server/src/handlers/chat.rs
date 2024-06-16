@@ -10,11 +10,12 @@ use crate::{
 use super::AppJson;
 
 pub async fn create_chat_handler(
+    Extension(user): Extension<User>,
     State(app_state): State<AppState>,
     AppJson(create_chat): AppJson<CreateChat>,
 ) -> Result<impl IntoResponse, AppError> {
     // handle create chat here
-    let chat = Chat::create_chat(create_chat, &app_state.pool).await?;
+    let chat = Chat::create_chat(create_chat, user.ws_id, &app_state.pool).await?;
     Ok(Json(chat))
 }
 

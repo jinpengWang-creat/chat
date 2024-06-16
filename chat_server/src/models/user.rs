@@ -160,24 +160,20 @@ impl User {
 #[cfg(test)]
 mod tests {
 
+    use crate::test_util::get_test_pool;
+
     use super::*;
     use anyhow::Result;
 
     #[tokio::test]
     async fn find_by_email_should_work() -> Result<()> {
-        let pool = TestPg::new(
-            "postgres://postgres:postgres@localhost:5432".to_string(),
-            Path::new("../migrations"),
-        );
-        let pool = pool.get_pool().await;
+        let (_test, pool) = get_test_pool(None).await;
 
         let email = "jim@123.com";
         let user = User::find_by_email(email, &pool).await?;
         assert!(user.is_none());
 
-        let user = SignupUser::new("jim", "jim@123.com", "1qa2ws3ed");
-        User::create(&user, &pool).await?;
-
+        let email = "user1@123.com";
         let user = User::find_by_email(email, &pool).await?;
         assert!(user.is_some());
         let user = user.unwrap();
@@ -194,15 +190,9 @@ mod tests {
         Ok(())
     }
 
-    use sqlx_db_tester::TestPg;
-    use std::path::Path;
     #[tokio::test]
     async fn create_and_verify_user_should_work() -> Result<()> {
-        let pool = TestPg::new(
-            "postgres://postgres:postgres@localhost:5432".to_string(),
-            Path::new("../migrations"),
-        );
-        let pool = pool.get_pool().await;
+        let (_test, pool) = get_test_pool(None).await;
         let input = SignupUser::new("tom", "tom@123.com", "1qa2ws3ed");
         let user = User::create(&input, &pool).await?;
         assert_eq!(user.fullname, input.fullname);
@@ -225,23 +215,17 @@ mod tests {
 
     #[tokio::test]
     async fn add_to_workspace_should_work() -> Result<()> {
-        let pool = TestPg::new(
-            "postgres://postgres:postgres@localhost:5432".to_string(),
-            Path::new("../migrations"),
-        );
-        let pool = pool.get_pool().await;
-        let ws = Workspace::create("add_to_workspace_should_work", 0, &pool).await?;
+        let (_test, pool) = get_test_pool(None).await;
 
-        let user = SignupUser::new("jim", "jim@123.com", "1qa2ws3ed");
-        let user = User::create(&user, &pool).await?;
-
-        let signin_user = SigninUser::new(&user.email, "1qa2ws3ed", ws.id);
-
-        let user = User::verify(&signin_user, &pool).await?;
+        let email = "user3@123.com";
+        let user = User::find_by_email(email, &pool).await?;
         assert!(user.is_some());
         let user = user.unwrap();
-        assert_eq!(user.ws_id, ws.id);
+        assert_eq!(user.ws_id, 1);
 
+        let ws = Workspace::find_by_name("workspace2", &pool).await?.unwrap();
+        let user = user.add_to_workspace(ws.id, &pool).await?;
+        assert_eq!(user.ws_id, ws.id);
         Ok(())
     }
 }

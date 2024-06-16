@@ -10,6 +10,9 @@ CREATE TABLE workspaces (
 ALTER TABLE users
 ADD COLUMN ws_id BIGINT REFERENCES workspaces(id);
 
+-- alter table chats to add ws_id column
+ALTER TABLE chats
+ADD COLUMN ws_id BIGINT REFERENCES workspaces(id);
 
 -- add a super user to altered users and set id to 0
 INSERT INTO users (id, fullname, email, password_hash)

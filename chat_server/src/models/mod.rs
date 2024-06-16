@@ -36,6 +36,7 @@ pub struct Workspace {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Type)]
+#[sqlx(type_name = "chat_type", rename_all = "snake_case")]
 pub enum ChatType {
     Single,
     Group,
@@ -45,9 +46,10 @@ pub enum ChatType {
 
 #[derive(Debug, Clone, Serialize, FromRow, Deserialize, PartialEq)]
 pub struct Chat {
-    id: i64,
-    name: String,
-    chat_type: ChatType,
-    members: Vec<i64>,
-    created_at: DateTime<Utc>,
+    pub id: i64,
+    pub ws_id: i64,
+    pub name: String,
+    pub r#type: ChatType,
+    pub members: Vec<i64>,
+    pub created_at: DateTime<Utc>,
 }

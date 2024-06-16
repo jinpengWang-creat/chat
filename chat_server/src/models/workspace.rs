@@ -48,24 +48,13 @@ impl Workspace {
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
-
-    use sqlx_db_tester::TestPg;
 
     use super::*;
-    use crate::{
-        error::AppError,
-        models::{SigninUser, SignupUser},
-        User,
-    };
+    use crate::{error::AppError, models::SignupUser, test_util::get_test_pool, User};
 
     #[tokio::test]
     async fn workspace_should_work() -> Result<(), AppError> {
-        let pool = TestPg::new(
-            "postgres://postgres:postgres@localhost:5432".to_string(),
-            Path::new("../migrations"),
-        );
-        let pool = pool.get_pool().await;
+        let (_test, pool) = get_test_pool(None).await;
         let signup_user = SignupUser::new("test", "test@1234.com", "password");
         let user = User::create(&signup_user, &pool).await?;
 
@@ -77,73 +66,34 @@ mod tests {
 
     #[tokio::test]
     async fn find_by_name_should_work() -> Result<(), AppError> {
-        let pool = TestPg::new(
-            "postgres://postgres:postgres@localhost:5432".to_string(),
-            Path::new("../migrations"),
-        );
-        let pool = pool.get_pool().await;
-        let name = "test";
-        let workspace = Workspace::find_by_name(name, &pool).await?;
+        let (_test, pool) = get_test_pool(None).await;
+        let workspace = Workspace::find_by_name("workspace4", &pool).await?;
         assert!(workspace.is_none());
 
-        Workspace::create(name, 0, &pool).await?;
-        let workspace = Workspace::find_by_name(name, &pool).await?;
+        let workspace = Workspace::find_by_name("workspace2", &pool).await?;
         assert!(workspace.is_some());
         let workspace = workspace.unwrap();
-        assert_eq!(workspace.name, name);
+        assert_eq!(workspace.name, "workspace2");
         Ok(())
     }
 
     #[tokio::test]
     async fn update_owner_should_work() -> Result<(), AppError> {
-        let pool = TestPg::new(
-            "postgres://postgres:postgres@localhost:5432".to_string(),
-            Path::new("../migrations"),
-        );
-        let pool = pool.get_pool().await;
-        let name = "test";
-        let workspace = Workspace::create(name, 0, &pool).await?;
+        let (_test, pool) = get_test_pool(None).await;
+        let workspace = Workspace::find_by_name("workspace2", &pool).await?.unwrap();
         assert_eq!(workspace.owner_id, 0);
-        let user = User::create(&SignupUser::new("tom", "tom@123.com", "1qa2ws3ed"), &pool).await?;
-        let workspace = workspace.update_owner(user.id, &pool).await?;
-        assert_eq!(workspace.owner_id, user.id);
+        let workspace = workspace.update_owner(3, &pool).await?;
+        assert_eq!(workspace.owner_id, 3);
         Ok(())
     }
 
     #[tokio::test]
     async fn fetch_all_chat_users_should_work() -> Result<(), AppError> {
-        let pool = TestPg::new(
-            "postgres://postgres:postgres@localhost:5432".to_string(),
-            Path::new("../migrations"),
-        );
-        let pool = pool.get_pool().await;
-        let ws = Workspace::create("fetch_all_chat_users_should_work", 0, &pool).await?;
-
-        // create a user named jim
-        let user = SignupUser::new("jim", "jim@123.com", "1qa2ws3ed");
-        let user = User::create(&user, &pool).await?;
-
-        let signin_user = SigninUser::new(&user.email, "1qa2ws3ed", ws.id);
-
-        let user = User::verify(&signin_user, &pool).await?;
-        assert!(user.is_some());
-        let user = user.unwrap();
-        assert_eq!(user.ws_id, ws.id);
-
-        // create a user named tom
-        let user = SignupUser::new("tom", "tom@123.com", "1qa2ws3ed");
-        let user = User::create(&user, &pool).await?;
-
-        let signin_user = SigninUser::new(&user.email, "1qa2ws3ed", ws.id);
-
-        let user = User::verify(&signin_user, &pool).await?;
-        assert!(user.is_some());
-        let user = user.unwrap();
-        assert_eq!(user.ws_id, ws.id);
-
-        let users = Workspace::fetch_all_chat_users(user.ws_id, &pool).await?;
-        assert_eq!(users.len(), 2);
-        println!("{:?}", users);
+        let (_test, pool) = get_test_pool(None).await;
+        let users = Workspace::fetch_all_chat_users(1, &pool).await?;
+        assert_eq!(users.len(), 5);
+        let users = Workspace::fetch_all_chat_users(2, &pool).await?;
+        assert_eq!(users.len(), 0);
         Ok(())
     }
 }
