@@ -130,7 +130,7 @@ impl Chat {
         Ok(chat)
     }
 
-    pub fn get_chat_type_by(members: &Vec<i64>, name: &Option<String>, public: bool) -> ChatType {
+    pub fn get_chat_type_by(members: &[i64], name: &Option<String>, public: bool) -> ChatType {
         let len = members.len();
         match (name, len) {
             (None, 2) => ChatType::Single,
