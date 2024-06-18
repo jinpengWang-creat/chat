@@ -1,5 +1,6 @@
 server:
   port: 8080
+  base_dir: /tmp/chat_server
 auth:
   pk: |
     -----BEGIN PUBLIC KEY-----

@@ -76,7 +76,7 @@ impl Chat {
     }
 
     pub async fn validate_members_and_name(
-        members: &Vec<i64>,
+        members: &[i64],
         name: &Option<String>,
         pool: &PgPool,
     ) -> Result<(), AppError> {

@@ -3,6 +3,7 @@ use config::{builder::DefaultState, Config, ConfigBuilder};
 use serde::Deserialize;
 use std::convert::TryFrom;
 use std::fs::File;
+use std::path::PathBuf;
 
 use crate::error::AppError;
 
@@ -33,6 +34,8 @@ pub struct ServerConfig {
     pub port: u16,
     #[serde(default = "default_db_url")]
     pub db_url: String,
+
+    pub base_dir: PathBuf,
 }
 
 impl TryFrom<Config> for AppConfig {

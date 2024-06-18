@@ -1,4 +1,4 @@
-use std::{fmt::Debug, ops::Deref, sync::Arc};
+use std::{fmt::Debug, fs, ops::Deref, sync::Arc};
 
 use anyhow::{Context, Result};
 
@@ -24,6 +24,7 @@ pub struct AppStateInner {
 
 impl AppState {
     pub async fn try_new(config: AppConfig) -> Result<Self, AppError> {
+        fs::create_dir_all(&config.server.base_dir).context("create base dir failed")?;
         let dk = DecodingKey::load(&config.auth.pk).context("load pk failed")?;
         let ek = EncodingKey::load(&config.auth.sk).context("loan sk failed")?;
         let pool = PgPool::connect(&config.server.db_url)
