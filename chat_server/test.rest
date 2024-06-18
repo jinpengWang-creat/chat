@@ -1,5 +1,5 @@
 ### chat api
-GET http://localhost:8080/api/chat
+GET http://localhost:8080/api/chats
 Authorization: Bearer {{token}}
 
 ### signup user
@@ -7,8 +7,8 @@ POST http://localhost:8080/api/signup
 Content-Type: application/json
 
 {
-    "fullname": "jack1",
-    "email": "jack1@122.com",
+    "fullname": "jack2",
+    "email": "jack2@122.com",
     "password": "123456",
     "workspace": "jack"
 }
@@ -29,4 +29,36 @@ Content-Type: application/json
 
 ### get users
 GET http://localhost:8080/api/users
+Authorization: Bearer {{token}}
+
+### create chat
+POST http://localhost:8080/api/chats
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "name": "chat",
+    "members": [1, 2, 3],
+    "ws_id": 1,
+    "public": true
+}
+
+### update chat
+PATCH  http://localhost:8080/api/chats/2
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "name": "chat",
+    "members": [1, 2, 3],
+    "ws_id": 1,
+    "public": false
+}
+
+### get chat by id
+GET http://localhost:8080/api/chats/2
+Authorization: Bearer {{token}}
+
+### delete chat
+DELETE http://localhost:8080/api/chats/2
 Authorization: Bearer {{token}}

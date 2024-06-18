@@ -5,7 +5,7 @@ use sqlx::prelude::{FromRow, Type};
 mod chat;
 mod user;
 mod workspace;
-pub use chat::CreateChat;
+pub use chat::{CreateChat, UpdateChat};
 pub use user::{SigninUser, SignupUser};
 
 #[derive(Debug, Clone, Serialize, FromRow, Deserialize, PartialEq)]
