@@ -52,6 +52,15 @@ pub enum AppError {
 
     #[error("request header to str error: {0}")]
     RequestHeaderToStr(#[from] axum::http::header::ToStrError),
+
+    #[error("multiple errors: {0}")]
+    Multiple(#[from] axum::extract::multipart::MultipartError),
+
+    #[error("io error: {0}")]
+    Io(#[from] std::io::Error),
+
+    #[error("Invalid header value: {0}")]
+    InvalidHeaderValue(#[from] axum::http::header::InvalidHeaderValue),
 }
 
 impl IntoResponse for AppError {
@@ -72,6 +81,9 @@ impl IntoResponse for AppError {
             AppError::RequestHeaderToStr(_) => StatusCode::BAD_REQUEST,
             AppError::CreateChat(_) => StatusCode::BAD_REQUEST,
             AppError::NotFound(_) => StatusCode::NOT_FOUND,
+            AppError::Multiple(_) => StatusCode::BAD_REQUEST,
+            AppError::Io(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::InvalidHeaderValue(_) => StatusCode::BAD_REQUEST,
         };
 
         (status, Json(ErrorOutput::new(self.to_string()))).into_response()

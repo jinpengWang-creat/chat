@@ -62,3 +62,25 @@ Authorization: Bearer {{token}}
 ### delete chat
 DELETE http://localhost:8080/api/chats/2
 Authorization: Bearer {{token}}
+
+
+### upload file
+POST http://localhost:8080/api/upload
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=MyBoundary
+
+--MyBoundary
+Content-Disposition: form-data; name="file"; filename="README.txt"
+Content-Type: application/octet-stream
+
+< D:\environment\Maven\apache-maven-3.9.5\README.txt
+--MyBoundary
+Content-Disposition: form-data; filename="hello.txt"
+
+Hello World!
+--MyBoundary--
+
+
+### get file
+GET http://localhost:8080/api/files/1/dd1/82e/8e3f6aba971b999f75f61cdd2d22c56135.txt
+Authorization: Bearer {{token}}
