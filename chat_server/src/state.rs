@@ -43,16 +43,25 @@ impl AppState {
 
 #[cfg(test)]
 impl AppState {
-    pub async fn new_for_test(
-        config: AppConfig,
-    ) -> Result<(sqlx_db_tester::TestPg, Self), AppError> {
+    pub async fn new_for_test() -> Result<(sqlx_db_tester::TestPg, Self), AppError> {
+        use sqlx::Executor;
         use sqlx_db_tester::TestPg;
         use std::path::Path;
+        let config = AppConfig::load()?;
         let dk = DecodingKey::load(&config.auth.pk).context("load pk failed")?;
         let ek = EncodingKey::load(&config.auth.sk).context("loan sk failed")?;
         let server_url = config.server.db_url.rsplit_once('/').unwrap_or_default();
         let tdb = TestPg::new(server_url.0.to_string(), Path::new("../migrations"));
         let pool = tdb.get_pool().await;
+        let sql = include_str!("../fixtures/test.sql").split(';');
+        let mut tx = pool.begin().await.expect("begin failed");
+        for q in sql {
+            if q.trim().is_empty() {
+                continue;
+            }
+            tx.execute(q).await.expect("execute failed");
+        }
+        tx.commit().await.expect("commit failed");
         let state = Self {
             inner: Arc::new(AppStateInner {
                 config,

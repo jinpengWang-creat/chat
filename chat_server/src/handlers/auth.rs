@@ -5,7 +5,6 @@ use crate::{
     error::AppError,
     models::{SigninUser, SignupUser},
     state::AppState,
-    User,
 };
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -19,7 +18,7 @@ pub async fn signin_handler(
     State(state): State<AppState>,
     AppJson(input): AppJson<SigninUser>,
 ) -> Result<impl IntoResponse, AppError> {
-    let user = User::verify(&input, &state.pool).await?;
+    let user = state.verify_user(&input).await?;
     match user {
         Some(user) => {
             let token = state.ek.sign(user)?;
@@ -35,7 +34,7 @@ pub async fn signup_handler(
     State(state): State<AppState>,
     AppJson(input): AppJson<SignupUser>,
 ) -> Result<impl IntoResponse, AppError> {
-    let user = User::create(&input, &state.pool).await?;
+    let user = state.create_user(&input).await?;
     let token = state.ek.sign(user)?;
     Ok((StatusCode::CREATED, Json(AuthOutput { token })))
 }
@@ -43,15 +42,13 @@ pub async fn signup_handler(
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::config::AppConfig;
     use anyhow::Result;
     use axum::http::StatusCode;
     use http_body_util::BodyExt;
 
     #[tokio::test]
     async fn signup_should_work() -> Result<()> {
-        let config = AppConfig::load()?;
-        let (_tdb, state) = AppState::new_for_test(config).await?;
+        let (_tdb, state) = AppState::new_for_test().await?;
         let name = "tom";
         let email = "tom@123.com";
         let password = "1qa2ws3ed";
@@ -71,8 +68,7 @@ mod test {
 
     #[tokio::test]
     async fn signin_should_work() -> Result<()> {
-        let config = AppConfig::load()?;
-        let (_tdb, state) = AppState::new_for_test(config).await?;
+        let (_tdb, state) = AppState::new_for_test().await?;
         let name = "tom";
         let email = "tom@123.com";
         let password = "1qa2ws3ed";
