@@ -26,6 +26,12 @@ pub enum AppError {
     #[error("create chat error: {0}")]
     CreateChat(String),
 
+    #[error("create message error: {0}")]
+    CreateMessage(String),
+
+    #[error("chat file error: {0}")]
+    ChatFile(String),
+
     #[error("chat not found error: {0}")]
     NotFound(String),
 
@@ -84,6 +90,8 @@ impl IntoResponse for AppError {
             AppError::Multiple(_) => StatusCode::BAD_REQUEST,
             AppError::Io(_) => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::InvalidHeaderValue(_) => StatusCode::BAD_REQUEST,
+            AppError::CreateMessage(_) => StatusCode::BAD_REQUEST,
+            AppError::ChatFile(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };
 
         (status, Json(ErrorOutput::new(self.to_string()))).into_response()

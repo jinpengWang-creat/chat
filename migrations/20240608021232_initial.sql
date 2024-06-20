@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS messages (
     chat_id INT NOT NULL REFERENCES chats(id),
     sender_id INT NOT NULL REFERENCES users(id),
     content TEXT NOT NULL,
+    files TEXT[],
     created_at timestamptz DEFAULT CURRENT_TIMESTAMP
 );
 

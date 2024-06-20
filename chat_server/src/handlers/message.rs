@@ -50,22 +50,22 @@ pub async fn upload_handler(
     mut multipart: Multipart,
 ) -> Result<impl IntoResponse, AppError> {
     let ws_id = user.ws_id;
-    let base_dir = app_state.config.server.base_dir.join(ws_id.to_string());
+    let base_dir = &app_state.config.server.base_dir;
     let mut paths = vec![];
     while let Some(field) = multipart.next_field().await? {
         let filename = field.file_name().map(String::from);
         let name = field.name().map(String::from);
         let bytes = field.bytes().await;
         if let (Some(filename), Ok(bytes)) = (filename.clone(), bytes) {
-            let file = ChatFile::new(&filename, &bytes);
-            let path = file.path(&base_dir);
+            let file = ChatFile::new(&filename, &bytes, ws_id as u64);
+            let path = file.path(base_dir);
             if !path.exists() {
                 fs::create_dir_all(path.parent().unwrap())?;
                 fs::write(&path, &bytes)?;
             } else {
                 info!("File already exists - {:?}", filename);
             }
-            paths.push(file.url(ws_id as u64));
+            paths.push(file.url());
         } else {
             warn!(
                 "Failed to read multipart field - name: {:?}, file name: {:?}",
