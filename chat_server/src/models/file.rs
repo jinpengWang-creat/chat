@@ -41,17 +41,18 @@ impl FromStr for ChatFile {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let s = s
             .strip_prefix("/files/")
-            .ok_or(AppError::ChatFile("Invalid file path".to_string()))?;
+            .ok_or(AppError::ChatFile(format!("Invalid file path: {}", s)))?;
         let parts: Vec<&str> = s.split('/').collect();
         if parts.len() != 4 {
-            return Err(AppError::ChatFile("Invalid file path".to_string()));
+            return Err(AppError::ChatFile(format!("Invalid file path: {}", s)));
         }
         let ws_id = parts[0]
             .parse::<u64>()
             .map_err(|_| AppError::ChatFile(format!("Invalid workspace id: {:?}", parts[0])))?;
-        let (ext, part3) = parts[3]
-            .rsplit_once('.')
-            .ok_or(AppError::ChatFile("Invalid file name".to_string()))?;
+        let (ext, part3) = parts[3].rsplit_once('.').ok_or(AppError::ChatFile(format!(
+            "Invalid file name: {}",
+            parts[3]
+        )))?;
         let hash = format!("{}{}{}", parts[1], parts[2], part3);
 
         Ok(Self {

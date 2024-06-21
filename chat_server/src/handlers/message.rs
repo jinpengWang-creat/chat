@@ -1,23 +1,42 @@
 use std::fs;
 
 use axum::{
-    extract::{Multipart, Path, State},
+    extract::{Multipart, Path, Query, State},
     http::{header::CONTENT_TYPE, HeaderMap, HeaderValue},
     response::IntoResponse,
     Extension, Json,
 };
 use tracing::{info, warn};
 
-use crate::{error::AppError, models::ChatFile, state::AppState, User};
+use crate::{
+    error::AppError,
+    models::{ChatFile, CreateMessage, ListMessage},
+    state::AppState,
+    User,
+};
 
-pub async fn send_message_handler() -> impl IntoResponse {
+use super::AppJson;
+
+pub async fn send_message_handler(
+    Extension(user): Extension<User>,
+    Path(id): Path<u64>,
+    State(app_state): State<AppState>,
+    AppJson(create_message): AppJson<CreateMessage>,
+) -> Result<impl IntoResponse, AppError> {
     // handle send message here
-    "send message"
+    let message = app_state
+        .create_message(create_message, id, user.id as u64)
+        .await?;
+    Ok(Json(message))
 }
 
-pub async fn list_message_handler() -> impl IntoResponse {
-    // handle list message here
-    "list message"
+pub async fn list_message_handler(
+    Path(id): Path<u64>,
+    State(app_state): State<AppState>,
+    Query(list_message): Query<ListMessage>,
+) -> Result<impl IntoResponse, AppError> {
+    let messages = app_state.list_message(id, list_message).await?;
+    Ok(Json(messages))
 }
 
 pub async fn file_handler(

@@ -125,7 +125,6 @@ impl AppState {
         Ok(chats)
     }
 
-    #[allow(dead_code)]
     pub async fn get_chat_by_id(&self, id: i64) -> Result<Option<Chat>, AppError> {
         let chat = sqlx::query_as(
             r#"
@@ -137,6 +136,20 @@ impl AppState {
         .fetch_optional(&self.pool)
         .await?;
         Ok(chat)
+    }
+
+    pub async fn is_chat_member(&self, chat_id: u64, user_id: u64) -> Result<bool, AppError> {
+        let chat = sqlx::query(
+            r#"
+                    SELECT 1
+                    FROM chats
+                    WHERE id = $1 AND $2 = ANY(members)"#,
+        )
+        .bind(chat_id as i64)
+        .bind(user_id as i64)
+        .fetch_optional(&self.pool)
+        .await?;
+        Ok(chat.is_some())
     }
 }
 
@@ -289,6 +302,26 @@ mod tests {
         assert_eq!(chat.r#type, ChatType::PublicChannel);
         assert_eq!(chat.members.len(), 5);
         assert_eq!(chat.members, vec![1, 2, 3, 4, 5]);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn chat_is_member_shourld_work() -> Result<(), AppError> {
+        let (_tdb, state) = AppState::new_for_test().await?;
+        let is_member = state.is_chat_member(1, 1).await?;
+        assert!(is_member);
+        // user 6 is not in chat 1
+        let is_member = state.is_chat_member(1, 6).await?;
+        assert!(!is_member);
+
+        // chat 10 does not exist
+        let is_member = state.is_chat_member(10, 1).await?;
+        assert!(!is_member);
+
+        // chat 10 does not exist and user 10 does not exist
+        let is_member = state.is_chat_member(10, 10).await?;
+        assert!(!is_member);
 
         Ok(())
     }

@@ -8,6 +8,7 @@ mod message;
 mod user;
 mod workspace;
 pub use chat::{CreateChat, UpdateChat};
+pub use message::{CreateMessage, ListMessage};
 pub use user::{SigninUser, SignupUser};
 
 #[derive(Debug, Clone, Serialize, FromRow, Deserialize, PartialEq)]
