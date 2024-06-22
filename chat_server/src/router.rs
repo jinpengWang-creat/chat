@@ -3,12 +3,13 @@ use axum::{
     routing::{get, post},
     Router,
 };
+use chat_core::verify_token;
 
 use crate::{
     config::AppConfig,
     error::AppError,
     handlers::*,
-    middlewares::{set_layer, verify_is_chat_member, verify_token},
+    middlewares::{set_layer, verify_is_chat_member},
     state::AppState,
 };
 
@@ -30,7 +31,7 @@ pub async fn get_router(config: AppConfig) -> Result<Router, AppError> {
         .route("/upload", post(upload_handler))
         .route("/files/:ws_id/*path", get(file_handler))
         .nest("/chats", chats)
-        .layer(from_fn_with_state(state.clone(), verify_token))
+        .layer(from_fn_with_state(state.clone(), verify_token::<AppState>))
         .route("/signin", post(signin_handler))
         .route("/signup", post(signup_handler));
 

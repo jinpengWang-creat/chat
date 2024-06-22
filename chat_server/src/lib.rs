@@ -6,6 +6,4 @@ mod models;
 mod router;
 mod server;
 mod state;
-mod utils;
-pub use models::User;
 pub use server::run;

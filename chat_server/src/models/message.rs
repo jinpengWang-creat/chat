@@ -1,10 +1,11 @@
 use std::str::FromStr;
 
+use chat_core::Message;
 use serde::{Deserialize, Serialize};
 
 use crate::{error::AppError, state::AppState};
 
-use super::{ChatFile, Message};
+use super::ChatFile;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct CreateMessage {

@@ -38,9 +38,6 @@ pub enum AppError {
     #[error("password hash error: {0}")]
     PasswordHash(#[from] argon2::password_hash::Error),
 
-    #[error("jwt error: {0}")]
-    Jwt(#[from] jwt_simple::JWTError),
-
     #[error("anyhow error: {0}")]
     Anyhow(#[from] anyhow::Error),
 
@@ -78,7 +75,6 @@ impl IntoResponse for AppError {
             AppError::Config(_) => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::Sqlx(_) => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::PasswordHash(_) => StatusCode::UNPROCESSABLE_ENTITY,
-            AppError::Jwt(_) => StatusCode::FORBIDDEN,
             AppError::Anyhow(_) => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::JsonRejection(_) => StatusCode::BAD_REQUEST,
             AppError::LoginFailed(_) => StatusCode::FORBIDDEN,

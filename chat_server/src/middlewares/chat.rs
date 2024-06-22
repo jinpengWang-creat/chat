@@ -4,8 +4,9 @@ use axum::{
     response::IntoResponse,
     Extension,
 };
+use chat_core::User;
 
-use crate::{error::AppError, state::AppState, User};
+use crate::{error::AppError, state::AppState};
 
 pub async fn verify_is_chat_member(
     State(app_state): State<AppState>,
@@ -23,13 +24,13 @@ pub async fn verify_is_chat_member(
 
 #[cfg(test)]
 mod test {
-    use crate::middlewares::verify_token;
 
     use super::*;
     use anyhow::Result;
     use axum::{
         body::Body, http::StatusCode, middleware::from_fn_with_state, routing::get, Router,
     };
+    use chat_core::verify_token;
     use http_body_util::BodyExt;
     use tower::ServiceExt;
 
@@ -45,7 +46,7 @@ mod test {
         let app = Router::new()
             .route("/:id", get(handler))
             .layer(from_fn_with_state(state.clone(), verify_is_chat_member))
-            .layer(from_fn_with_state(state.clone(), verify_token))
+            .layer(from_fn_with_state(state.clone(), verify_token::<AppState>))
             .with_state(state.clone());
 
         let req = Request::builder()

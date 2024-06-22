@@ -5,8 +5,9 @@ use std::{
 
 use crate::error::AppError;
 
-use super::ChatFile;
 use sha1::{Digest, Sha1};
+
+use super::ChatFile;
 
 impl ChatFile {
     pub fn new(filename: &str, data: &[u8], ws_id: u64) -> Self {

@@ -1,12 +1,8 @@
-mod auth;
 mod chat;
-mod request_id;
-mod server_time;
-pub use auth::verify_token;
+
 use axum::{middleware::from_fn, Router};
 pub use chat::verify_is_chat_member;
-use request_id::set_request_id;
-use server_time::ServerTimeLayer;
+use chat_core::{set_request_id, ServerTimeLayer};
 use tower::ServiceBuilder;
 use tower_http::{
     compression::CompressionLayer,
@@ -14,9 +10,6 @@ use tower_http::{
     LatencyUnit,
 };
 use tracing::Level;
-
-const REQUEST_ID_HEADER: &str = "x-request-id";
-const SERVER_TIME_HEADER: &str = "x-server-time";
 
 pub fn set_layer(app: Router) -> Router {
     app.layer(

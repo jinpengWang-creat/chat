@@ -1,27 +1,32 @@
 use axum::{
     async_trait,
     extract::{FromRequestParts, Request, State},
-    http::request,
+    http::{request, StatusCode},
     middleware::Next,
-    response::IntoResponse,
+    response::{IntoResponse as _, Response},
 };
 use axum_extra::{
     headers::{authorization::Bearer, Authorization},
     TypedHeader,
 };
 
-use crate::{error::AppError, state::AppState};
+use super::TokenVerifier;
 
-pub async fn verify_token(
-    State(app_state): State<AppState>,
+pub async fn verify_token<T>(
+    State(app_state): State<T>,
     AuthHeader(token): AuthHeader,
     mut request: Request,
     next: Next,
-) -> Result<impl IntoResponse, AppError> {
-    let user = app_state.dk.verify(&token)?;
+) -> Response
+where
+    T: TokenVerifier + Clone + Send + Sync + 'static,
+{
+    let user = app_state.verify(&token);
+    let Ok(user) = user else {
+        return (StatusCode::UNAUTHORIZED, "Invalid token").into_response();
+    };
     request.extensions_mut().insert(user);
-    let ret = next.run(request).await;
-    Ok(ret)
+    next.run(request).await
 }
 
 pub struct AuthHeader(pub String);
@@ -31,7 +36,7 @@ impl<S> FromRequestParts<S> for AuthHeader
 where
     S: Send + Sync,
 {
-    type Rejection = AppError;
+    type Rejection = (StatusCode, String);
 
     async fn from_request_parts(
         parts: &mut request::Parts,
@@ -39,36 +44,58 @@ where
     ) -> Result<Self, Self::Rejection> {
         match TypedHeader::<Authorization<Bearer>>::from_request_parts(parts, state).await {
             Ok(TypedHeader(Authorization(bearer))) => Ok(Self(bearer.token().to_string())),
-            _ => Err(AppError::Unauthorized),
+            _ => Err((StatusCode::UNAUTHORIZED, "Invalid token".to_string())),
         }
     }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::User;
+    use std::sync::Arc;
+
+    use crate::{
+        utils::{DecodingKey, EncodingKey},
+        User,
+    };
 
     use super::*;
     use anyhow::Result;
     use axum::{
-        body::Body, http::StatusCode, middleware::from_fn_with_state, routing::get, Router,
+        body::Body, http::StatusCode, middleware::from_fn_with_state, response::IntoResponse,
+        routing::get, Router,
     };
     use http_body_util::BodyExt;
     use request::Request;
     use tower::ServiceExt;
+
+    #[derive(Clone)]
+    pub struct AppState(Arc<AppStateInner>);
+
+    pub struct AppStateInner {
+        pub pk: DecodingKey,
+        pub ek: EncodingKey,
+    }
+
+    impl TokenVerifier for AppState {
+        type Error = anyhow::Error;
+        fn verify(&self, token: &str) -> Result<User, Self::Error> {
+            self.0.pk.verify(token)
+        }
+    }
 
     async fn handler() -> impl IntoResponse {
         (StatusCode::OK, "OK")
     }
     #[tokio::test]
     async fn verify_token_middleware_should_work() -> Result<()> {
-        let (_tdb, state) = AppState::new_for_test().await?;
-
+        let ek = EncodingKey::load(include_str!("../../fixtures/encoding.pem"))?;
+        let pk = DecodingKey::load(include_str!("../../fixtures/decoding.pem"))?;
+        let state = AppState(Arc::new(AppStateInner { pk, ek }));
         let user = User::new(11, "j1im", "jim@122.com", 0);
-        let token = state.ek.sign(user)?;
+        let token = state.0.ek.sign(user)?;
         let app = Router::new()
             .route("/", get(handler))
-            .layer(from_fn_with_state(state.clone(), verify_token))
+            .layer(from_fn_with_state(state.clone(), verify_token::<AppState>))
             .with_state(state);
 
         let req = Request::builder()

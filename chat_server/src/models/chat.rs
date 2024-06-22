@@ -1,8 +1,7 @@
+use chat_core::Chat;
 use serde::{Deserialize, Serialize};
 
 use crate::{error::AppError, state::AppState};
-
-use super::{Chat, ChatType};
 
 #[derive(Debug, Deserialize, Default, Clone, Serialize)]
 pub struct CreateChat {
@@ -17,23 +16,6 @@ pub struct UpdateChat {
     pub name: Option<String>,
     pub members: Vec<i64>,
     pub public: bool,
-}
-
-impl Chat {
-    pub fn get_chat_type_by(members: &[i64], name: &Option<String>, public: bool) -> ChatType {
-        let len = members.len();
-        match (name, len) {
-            (None, 2) => ChatType::Single,
-            (None, _) => ChatType::Group,
-            (Some(_), _) => {
-                if public {
-                    ChatType::PublicChannel
-                } else {
-                    ChatType::PrivateChannel
-                }
-            }
-        }
-    }
 }
 
 impl AppState {
@@ -155,6 +137,8 @@ impl AppState {
 
 #[cfg(test)]
 mod tests {
+    use chat_core::ChatType;
+
     use super::*;
     use crate::error::AppError;
 

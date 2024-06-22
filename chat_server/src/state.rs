@@ -2,13 +2,10 @@ use std::{fmt::Debug, fs, ops::Deref, sync::Arc};
 
 use anyhow::{Context, Result};
 
+use chat_core::{DecodingKey, EncodingKey, TokenVerifier};
 use sqlx::PgPool;
 
-use crate::{
-    config::AppConfig,
-    error::AppError,
-    utils::{DecodingKey, EncodingKey},
-};
+use crate::{config::AppConfig, error::AppError};
 
 #[derive(Clone, Debug)]
 pub struct AppState {
@@ -38,6 +35,13 @@ impl AppState {
                 pool,
             }),
         })
+    }
+}
+
+impl TokenVerifier for AppState {
+    type Error = AppError;
+    fn verify(&self, token: &str) -> Result<chat_core::User, Self::Error> {
+        Ok(self.inner.dk.verify(token)?)
     }
 }
 

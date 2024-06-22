@@ -6,13 +6,13 @@ use axum::{
     response::IntoResponse,
     Extension, Json,
 };
+use chat_core::User;
 use tracing::{info, warn};
 
 use crate::{
     error::AppError,
     models::{ChatFile, CreateMessage, ListMessage},
     state::AppState,
-    User,
 };
 
 use super::AppJson;

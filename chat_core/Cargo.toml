@@ -1,35 +1,27 @@
 [package]
-name = "chat-server"
+name = "chat-core"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-chat-core = { workspace = true }
-anyhow = { workspace = true }
-argon2 = { version = "0.5.3", features = ["std"] }
-axum = { workspace = true }
-axum-extra = { workspace = true }
-axum-macros = "0.4.1"
-chrono = { workspace = true }
-config = "0.14.0"
-
-mime_guess = "2.0.4"
 serde = { workspace = true }
 serde_json = { workspace = true }
-serde_yaml = { workspace = true }
-hex = "0.4.3"
-sha1 = "0.10.6"
 sqlx = { workspace = true }
-sqlx-db-tester = "0.4.2"
+chrono = { workspace = true }
+anyhow = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
+axum = { workspace = true }
+axum-extra = { workspace = true }
 tower = { workspace = true }
 tower-http = { workspace = true }
 tracing = { workspace = true }
-tracing-subscriber = { workspace = true }
-
-
+uuid = { version = "1.8.0", features = ["v7", "serde"] }
+futures-util = "0.3.30"
+jwt-simple = { version = "0.12.9", default-features = false, features = [
+    "pure-rust",
+] }
 [dev-dependencies]
 http-body-util = "0.1.1"

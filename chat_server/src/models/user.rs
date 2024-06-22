@@ -2,11 +2,10 @@ use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
 };
+use chat_core::{ChatUser, User};
 use serde::{Deserialize, Serialize};
 
-use crate::{error::AppError, state::AppState, User};
-
-use super::ChatUser;
+use crate::{error::AppError, state::AppState};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SigninUser {
@@ -161,20 +160,6 @@ impl SignupUser {
             email: email.to_string(),
             workspace: "default".to_string(),
             password: password.to_string(),
-        }
-    }
-}
-
-#[cfg(test)]
-impl User {
-    pub fn new(id: i64, fullname: &str, email: &str, ws_id: i64) -> Self {
-        Self {
-            id,
-            fullname: fullname.to_string(),
-            email: email.to_string(),
-            password_hash: None,
-            created_at: chrono::Utc::now(),
-            ws_id,
         }
     }
 }

@@ -4,12 +4,12 @@ use axum::{
     response::IntoResponse,
     Extension, Json,
 };
+use chat_core::User;
 
 use crate::{
     error::AppError,
     models::{CreateChat, UpdateChat},
     state::AppState,
-    User,
 };
 
 use super::AppJson;

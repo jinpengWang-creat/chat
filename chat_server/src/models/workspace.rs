@@ -1,6 +1,6 @@
-use crate::{error::AppError, state::AppState};
+use chat_core::Workspace;
 
-use super::Workspace;
+use crate::{error::AppError, state::AppState};
 
 impl AppState {
     pub async fn create_workspace(&self, name: &str, user_id: u64) -> Result<Workspace, AppError> {
