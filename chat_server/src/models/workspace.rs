@@ -81,9 +81,9 @@ mod tests {
     #[tokio::test]
     async fn fetch_all_chat_users_should_work() -> Result<(), AppError> {
         let (_tdb, state) = AppState::new_for_test().await?;
+        let users = state.fetch_chat_users(0).await?;
+        assert_eq!(users.len(), 6);
         let users = state.fetch_chat_users(1).await?;
-        assert_eq!(users.len(), 5);
-        let users = state.fetch_chat_users(2).await?;
         assert_eq!(users.len(), 0);
         Ok(())
     }

@@ -40,7 +40,7 @@ mod test {
     async fn verify_chat_middleware_should_work() -> Result<()> {
         let (_tdb, state) = AppState::new_for_test().await?;
 
-        let user = state.find_user_by_email("user1@123.com").await?.unwrap();
+        let user = state.find_user_by_email("test1@none.org").await?.unwrap();
         let token = state.ek.sign(user)?;
         let app = Router::new()
             .route("/:id", get(handler))
@@ -55,13 +55,14 @@ mod test {
             .body(Body::empty())?;
 
         let res = app.clone().oneshot(req).await?;
+
         assert_eq!(res.status(), StatusCode::OK);
 
         let val = res.collect().await?.to_bytes().to_vec();
         assert_eq!(val, b"OK");
 
         // test without token
-        let user = state.find_user_by_email("user5@123.com").await?.unwrap();
+        let user = state.find_user_by_email("test5@none.org").await?.unwrap();
         let token = state.ek.sign(user)?;
         let req = Request::builder()
             .method("GET")

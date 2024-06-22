@@ -193,7 +193,7 @@ mod tests {
         let user = state.find_user_by_email(email).await?;
         assert!(user.is_none());
 
-        let email = "user1@123.com";
+        let email = "test1@none.org";
         let user = state.find_user_by_email(email).await?;
         assert!(user.is_some());
         let user = user.unwrap();
@@ -236,11 +236,11 @@ mod tests {
     #[tokio::test]
     async fn add_to_workspace_should_work() -> Result<()> {
         let (_tdb, state) = AppState::new_for_test().await?;
-        let email = "user3@123.com";
+        let email = "test3@none.org";
         let user = state.find_user_by_email(email).await?;
         assert!(user.is_some());
         let user = user.unwrap();
-        assert_eq!(user.ws_id, 1);
+        assert_eq!(user.ws_id, 0);
 
         let ws = state.find_workspace_by_name("workspace2").await?.unwrap();
         let user = state
