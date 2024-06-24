@@ -20,8 +20,6 @@ tower-http = { workspace = true }
 tracing = { workspace = true }
 uuid = { version = "1.8.0", features = ["v7", "serde"] }
 futures-util = "0.3.30"
-jwt-simple = { version = "0.12.9", default-features = false, features = [
-    "pure-rust",
-] }
+jwt-simple = { workspace = true }
 [dev-dependencies]
 http-body-util = "0.1.1"

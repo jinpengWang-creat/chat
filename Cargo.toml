@@ -28,3 +28,7 @@ axum = { version = "0.7.5", features = [
 axum-extra = { version = "0.9.3", features = ["typed-header"] }
 tower = "0.4.13"
 tower-http = { version = "0.5.2", features = ["compression-full", "trace"] }
+jwt-simple = { version = "0.12.9", default-features = false, features = [
+    "pure-rust",
+] }
+config = "0.14.0"
