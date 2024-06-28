@@ -10,7 +10,8 @@ pub struct ChatUpdated {
 
 // PERFORM pg_notify('chat_message_created', row_to_json(NEW)::text);
 #[allow(dead_code)]
-
+#[derive(Debug)]
 pub struct ChatMessageCreated {
-    pub new: Message,
+    pub chat: Chat,
+    pub message: Message,
 }
