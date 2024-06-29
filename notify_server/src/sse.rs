@@ -9,6 +9,7 @@ use futures::stream::Stream;
 use std::{convert::Infallible, time::Duration};
 use tokio::sync::broadcast;
 use tokio_stream::{wrappers::BroadcastStream, StreamExt as _};
+use tracing::info;
 
 use crate::{AppEvent, AppState};
 const MAX_CHANNEL_SIZE: usize = 100;
@@ -17,13 +18,14 @@ pub async fn sse_handler(
     State(state): State<AppState>,
     TypedHeader(user_agent): TypedHeader<headers::UserAgent>,
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
-    println!("`{}` connected", user_agent.as_str());
+    info!("`{}` connected", user_agent.as_str());
 
     let user_id = user.id as u64;
-
     let receive = if let Some(sender) = state.users.get(&user_id) {
+        info!("user {} subscribed", user_id);
         sender.subscribe()
     } else {
+        info!("user {} created", user_id);
         let (sender, receive) = broadcast::channel(MAX_CHANNEL_SIZE);
         state.users.insert(user_id, sender);
         receive

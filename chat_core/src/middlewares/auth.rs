@@ -1,6 +1,6 @@
 use axum::{
     async_trait,
-    extract::{FromRequestParts, Request, State},
+    extract::{FromRequestParts, Query, Request, State},
     http::{request, StatusCode},
     middleware::Next,
     response::{IntoResponse as _, Response},
@@ -11,6 +11,11 @@ use axum_extra::{
 };
 
 use super::TokenVerifier;
+
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+struct Params {
+    token: String,
+}
 
 pub async fn verify_token<T>(
     State(app_state): State<T>,
@@ -44,7 +49,16 @@ where
     ) -> Result<Self, Self::Rejection> {
         match TypedHeader::<Authorization<Bearer>>::from_request_parts(parts, state).await {
             Ok(TypedHeader(Authorization(bearer))) => Ok(Self(bearer.token().to_string())),
-            _ => Err((StatusCode::UNAUTHORIZED, "Invalid token".to_string())),
+            Err(e) => {
+                if e.is_missing() {
+                    Query::<Params>::from_request_parts(parts, state)
+                        .await
+                        .map(|params| Self(params.token.clone()))
+                        .map_err(|_| (StatusCode::UNAUTHORIZED, "Missing token".to_string()))
+                } else {
+                    Err((StatusCode::UNAUTHORIZED, "Invalid token".to_string()))
+                }
+            }
         }
     }
 }
@@ -126,8 +140,26 @@ mod test {
             .header("Authorization", "invalid_token")
             .body(Body::empty())?;
 
-        let res = app.oneshot(req).await?;
+        let res = app.clone().oneshot(req).await?;
         assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
+
+        // test invalid token in query params
+        let req = Request::builder()
+            .method("GET")
+            .uri("/?token=invalid_token")
+            .body(Body::empty())?;
+
+        let res = app.clone().oneshot(req).await?;
+        assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
+
+        // test good token in query params
+        let req = Request::builder()
+            .method("GET")
+            .uri(&format!("/?token={}", token))
+            .body(Body::empty())?;
+
+        let res = app.clone().oneshot(req).await?;
+        assert_eq!(res.status(), StatusCode::OK);
 
         Ok(())
     }

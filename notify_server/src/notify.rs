@@ -4,7 +4,7 @@ use chat_core::{Chat, Message};
 use serde::{Deserialize, Serialize};
 use sqlx::postgres::PgListener;
 use tokio_stream::StreamExt;
-use tracing::warn;
+use tracing::{info, warn};
 
 use crate::AppState;
 
@@ -56,6 +56,7 @@ pub async fn setup_pg_listener(state: AppState) -> anyhow::Result<()> {
                     let user_map = state.users.clone();
                     for user_id in notification.user_ids {
                         if let Some(sender) = user_map.get(&user_id) {
+                            info!("sending notification to user {}", user_id);
                             if let Err(err) = sender.send(notification.event.clone()) {
                                 warn!("Failed to send notification to user {}: {:?}", user_id, err);
                             }
