@@ -4,8 +4,8 @@ use axum::{
     Extension,
 };
 use chat_core::User;
-use futures::stream::Stream;
-use std::{convert::Infallible, time::Duration};
+use futures::stream::{self, Stream};
+use std::{convert::Infallible, sync::Arc, time::Duration};
 use tokio::sync::broadcast;
 use tokio_stream::{wrappers::BroadcastStream, StreamExt as _};
 use tracing::info;
@@ -29,12 +29,14 @@ pub async fn sse_handler(
 
     let stream = BroadcastStream::new(receive)
         .filter_map(|v| v.ok())
+        .merge(stream::repeat_with(|| Arc::new(AppEvent::Alive)).throttle(Duration::from_secs(1)))
         .map(|e| {
             let name = match e.as_ref() {
                 AppEvent::NewChat(_) => "NewChat",
                 AppEvent::AddToChat(_) => "AddToChat",
                 AppEvent::RemoveFromChat(_) => "RemoveFromChat",
                 AppEvent::NewMessage(_) => "NewMessage",
+                AppEvent::Alive => "Alive",
             };
             let data = serde_json::to_string(&e).expect("Failed to serialize event");
             Ok(Event::default().event(name).data(data))
@@ -43,6 +45,7 @@ pub async fn sse_handler(
     Sse::new(stream).keep_alive(
         axum::response::sse::KeepAlive::new()
             .interval(Duration::from_secs(1))
+            .event(Event::default().event("keep-alive").data("1"))
             .text("keep-alive-text"),
     )
 }

@@ -15,6 +15,7 @@ pub enum AppEvent {
     AddToChat(Chat),
     RemoveFromChat(Chat),
     NewMessage(Message),
+    Alive,
 }
 // PERFORM pg_notify('chat_updated', json_build_object('op', TG_OP,'old', OLD, 'new', NEW )::text);
 #[allow(dead_code)]

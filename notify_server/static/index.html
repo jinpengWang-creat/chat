@@ -10,8 +10,7 @@
 
     <script>
 
-// add Authorization header to the /events request and every request should bring the token
-        const token = 'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3MTk2MjY1NzYsImV4cCI6MTcyMDIzMTM3NiwibmJmIjoxNzE5NjI2NTc2LCJpc3MiOiJjaGF0X3NlcnZlciIsImF1ZCI6ImNoYXRfd2ViIiwiaWQiOjYsImZ1bGxuYW1lIjoiamFjayIsImVtYWlsIjoiamFja0AxMjIuY29tIiwiY3JlYXRlZF9hdCI6IjIwMjQtMDYtMjhUMTE6MzA6NTIuNDgxMDg0WiIsIndzX2lkIjoxfQ.nHBi3uaMxrmM7wnKPSrFG0mB17WQ5_wMWHNPCIzA47qVOBROYKRow6zNiGvJx3yyXvBVMQMZS4Glkao_BPDxCQ';
+        const token = 'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3MTk3MjU2OTgsImV4cCI6MTcyMDMzMDQ5OCwibmJmIjoxNzE5NzI1Njk4LCJpc3MiOiJjaGF0X3NlcnZlciIsImF1ZCI6ImNoYXRfd2ViIiwiaWQiOjYsImZ1bGxuYW1lIjoiamFjayIsImVtYWlsIjoiamFja0AxMjIuY29tIiwiY3JlYXRlZF9hdCI6IjIwMjQtMDYtMjhUMTE6MzA6NTIuNDgxMDg0WiIsIndzX2lkIjoxfQ.2bBhMOCXwPIWqL5ju6qUJ_dWZB6L5bPTO64Sl_SUBe9KCQOO5zmeOgC638RyzmiOPg8LxqgUiW-WcnWDq4XGBQ';
         const eventSource = new EventSource('/events?token=' + token);
 
         eventSource.onmessage = function(event) {
@@ -37,6 +36,37 @@
         eventSource.addEventListener('NewMessage', function(event) {
             console.log('Got message:', event.data);
         });
+
+        var url = "http://localhost:8081/alive?token=" + token;
+        const FIRST_INTERVAL = 1000; // 初始请求间隔（毫秒）
+        const INCREASE_INTERVAL = 5000; // 响应结果不变时，递增的请求间隔（毫秒）
+
+        let timer = null;
+        let interval = FIRST_INTERVAL;
+        let lastResponse;
+
+        function startFetch() {
+            fetchData(); // 首次立即发起请求
+        }
+
+        function fetchData() {
+            fetch(url)
+                .then(data => {
+                    console.log(data);
+                    timer = setTimeout(fetchData, interval); // 设置下一次请求
+                })
+                .catch(error => {
+                    console.log('error', error);
+                    stopFetch();
+                    console.error(error);
+                }
+                );
+        }
+
+        function stopFetch() {
+            clearTimeout(timer);
+        }
+        startFetch();
     </script>
 </body>
 </html>

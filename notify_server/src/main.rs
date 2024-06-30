@@ -11,10 +11,12 @@ async fn main() -> Result<()> {
         .with_filter(LevelFilter::INFO);
     tracing_subscriber::registry().with(layer).init();
     let config = AppConfig::load()?;
+    let host = config.server.host.clone();
+    let port = config.server.port;
     let app = get_router(config).await?;
 
-    let addr = "0.0.0.0:6687";
-    let listener = TcpListener::bind(addr).await?;
+    let addr = format!("{}:{}", host, port);
+    let listener = TcpListener::bind(&addr).await?;
     info!("listening on {}", addr);
 
     axum::serve(listener, app.into_make_service()).await?;
