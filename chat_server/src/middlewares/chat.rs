@@ -16,7 +16,9 @@ pub async fn verify_is_chat_member(
     next: Next,
 ) -> Result<impl IntoResponse, AppError> {
     if !app_state.is_chat_member(id, user.id as u64).await? {
-        return Err(AppError::Unauthorized);
+        return Err(AppError::Unauthorized(
+            "You are not a member of this chat".to_string(),
+        ));
     }
     let ret = next.run(request).await;
     Ok(ret)

@@ -3,6 +3,7 @@ mod error;
 mod handlers;
 mod middlewares;
 mod models;
+mod openapi;
 mod router;
 mod server;
 mod state;

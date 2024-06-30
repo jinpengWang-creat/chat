@@ -45,7 +45,7 @@ pub async fn file_handler(
     Path((ws_id, path)): Path<(u64, String)>,
 ) -> Result<impl IntoResponse, AppError> {
     if user.ws_id != ws_id as i64 {
-        return Err(AppError::Unauthorized);
+        return Err(AppError::Unauthorized("ws_id does not match".to_string()));
     }
 
     let base_dir = app_state.config.server.base_dir.join(ws_id.to_string());

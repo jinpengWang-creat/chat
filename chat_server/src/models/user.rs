@@ -4,17 +4,18 @@ use argon2::{
 };
 use chat_core::{ChatUser, User};
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use crate::{error::AppError, state::AppState};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct SigninUser {
     pub email: String,
     pub password: String,
     pub ws_id: i64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct SignupUser {
     pub fullname: String,
     pub email: String,

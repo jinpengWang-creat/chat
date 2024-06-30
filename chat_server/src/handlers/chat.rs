@@ -14,6 +14,14 @@ use crate::{
 
 use super::AppJson;
 
+#[utoipa::path(get, path = "/api/chats/{id}",
+responses(
+    (status = 200, description = "get chat in successful", body = Chat),
+),
+security(
+    ("Authorization" = [])
+)
+)]
 pub async fn get_chat_handler(
     Path(id): Path<u64>,
     State(app_state): State<AppState>,
@@ -25,15 +33,39 @@ pub async fn get_chat_handler(
     }
 }
 
+#[utoipa::path(post, path = "/api/chats",
+request_body(content = CreateChat, description = "Create chat details"),
+responses(
+    (status = 200, description = "get chat list in successful", body = Chat),
+),
+security(
+    ("Authorization" = [])
+))]
 pub async fn create_chat_handler(
+    Extension(user): Extension<User>,
     State(app_state): State<AppState>,
-    AppJson(create_chat): AppJson<CreateChat>,
+    AppJson(mut create_chat): AppJson<CreateChat>,
 ) -> Result<impl IntoResponse, AppError> {
+    // if user is not in create_chat.members, add self to create_chat.members
+    if !create_chat.members.contains(&user.id) {
+        create_chat.members.push(user.id);
+    }
+    // if the ws_id of user is not match with create_chat.ws_id, return error
+    if user.ws_id != create_chat.ws_id {
+        return Err(AppError::Unauthorized("ws_id does not match".to_string()));
+    }
     // handle create chat here
     let chat = app_state.create_chat(create_chat).await?;
     Ok((StatusCode::CREATED, Json(chat)))
 }
 
+#[utoipa::path(get, path = "/api/chats",
+responses(
+    (status = 200, description = "get chat list in successful", body = Vec<Chat>),
+),
+security(
+    ("Authorization" = [])
+))]
 pub async fn list_chat_handler(
     Extension(user): Extension<User>,
     State(app_state): State<AppState>,
@@ -43,6 +75,14 @@ pub async fn list_chat_handler(
     Ok((StatusCode::OK, Json(chats)))
 }
 
+#[utoipa::path(patch, path = "/api/chats/{id}",
+request_body(content = UpdateChat, description = "Update chat details"),
+responses(
+    (status = 200, description = "update chat in successful", body = Chat),
+),
+security(
+    ("Authorization" = [])
+))]
 pub async fn update_chat_handler(
     Path(id): Path<u64>,
     State(app_state): State<AppState>,
@@ -52,6 +92,13 @@ pub async fn update_chat_handler(
     Ok((StatusCode::OK, Json(chat)))
 }
 
+#[utoipa::path(delete, path = "/api/chats/{id}",
+responses(
+    (status = 200, description = "delete chat in successful", body = Chat),
+),
+security(
+    ("Authorization" = [])
+))]
 pub async fn delete_chat_handler(
     Path(id): Path<u64>,
     State(app_state): State<AppState>,

@@ -9,6 +9,7 @@ use crate::{
     error::AppError,
     handlers::*,
     middlewares::{set_layer, verify_is_chat_member},
+    openapi::OpenApiRouter,
     state::AppState,
 };
 
@@ -34,6 +35,7 @@ pub async fn get_router(state: AppState) -> Result<Router, AppError> {
         .route("/signup", post(signup_handler));
 
     let app = Router::new()
+        .openapi()
         .route("/", get(index_handler))
         .nest("/api", api)
         .with_state(state.clone());

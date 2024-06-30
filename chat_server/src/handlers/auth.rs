@@ -1,5 +1,6 @@
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use crate::{
     error::AppError,
@@ -7,13 +8,18 @@ use crate::{
     state::AppState,
 };
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct AuthOutput {
     token: String,
 }
 
 use super::AppJson;
 
+#[utoipa::path(post, path = "/api/signin",
+request_body(content = SigninUser, description = "User signin details"),
+responses(
+    (status = 200, description = "User signed in successfully", body = AuthOutput),
+))]
 pub async fn signin_handler(
     State(state): State<AppState>,
     AppJson(input): AppJson<SigninUser>,
@@ -30,6 +36,11 @@ pub async fn signin_handler(
     }
 }
 
+#[utoipa::path(post, path = "/api/signup",
+request_body(content = SignupUser, description = "User signup details"),
+responses(
+    (status = 200, description = "User signed up successfully", body = AuthOutput),
+))]
 pub async fn signup_handler(
     State(state): State<AppState>,
     AppJson(input): AppJson<SignupUser>,

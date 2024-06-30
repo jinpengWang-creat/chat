@@ -35,3 +35,4 @@ jwt-simple = { version = "0.12.9", default-features = false, features = [
     "pure-rust",
 ] }
 config = "0.14.0"
+utoipa = { version = "4.2.3", features = ["axum_extras", "chrono"] }

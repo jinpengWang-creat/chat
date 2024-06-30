@@ -2,18 +2,19 @@ use std::str::FromStr;
 
 use chat_core::Message;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use crate::{error::AppError, state::AppState};
 
 use super::ChatFile;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, ToSchema)]
 pub struct CreateMessage {
     pub content: String,
     pub files: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, ToSchema)]
 pub struct ListMessage {
     pub last_id: Option<u64>,
     pub limit: u64,

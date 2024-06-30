@@ -7,8 +7,9 @@ pub use chat::{CreateChat, UpdateChat};
 pub use message::{CreateMessage, ListMessage};
 use serde::{Deserialize, Serialize};
 pub use user::{SigninUser, SignupUser};
+use utoipa::ToSchema;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ChatFile {
     pub ws_id: u64,
     pub ext: String,

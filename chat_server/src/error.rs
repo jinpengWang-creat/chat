@@ -1,8 +1,9 @@
 use axum::{extract::rejection::JsonRejection, response::IntoResponse};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use utoipa::ToSchema;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct ErrorOutput {
     error: String,
 }
@@ -50,8 +51,8 @@ pub enum AppError {
     #[error("email already exists: {0}")]
     EmailAlreadyExists(String),
 
-    #[error("Unauthorized")]
-    Unauthorized,
+    #[error("Unauthorized: {0}")]
+    Unauthorized(String),
 
     #[error("request header to str error: {0}")]
     RequestHeaderToStr(#[from] axum::http::header::ToStrError),
@@ -79,7 +80,7 @@ impl IntoResponse for AppError {
             AppError::JsonRejection(_) => StatusCode::BAD_REQUEST,
             AppError::LoginFailed(_) => StatusCode::FORBIDDEN,
             AppError::EmailAlreadyExists(_) => StatusCode::CONFLICT,
-            AppError::Unauthorized => StatusCode::UNAUTHORIZED,
+            AppError::Unauthorized(_) => StatusCode::UNAUTHORIZED,
             AppError::RequestHeaderToStr(_) => StatusCode::BAD_REQUEST,
             AppError::CreateChat(_) => StatusCode::BAD_REQUEST,
             AppError::NotFound(_) => StatusCode::NOT_FOUND,
