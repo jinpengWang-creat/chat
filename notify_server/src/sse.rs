@@ -3,7 +3,6 @@ use axum::{
     response::sse::{Event, Sse},
     Extension,
 };
-use axum_extra::{headers, TypedHeader};
 use chat_core::User;
 use futures::stream::Stream;
 use std::{convert::Infallible, time::Duration};
@@ -16,10 +15,7 @@ const MAX_CHANNEL_SIZE: usize = 100;
 pub async fn sse_handler(
     Extension(user): Extension<User>,
     State(state): State<AppState>,
-    TypedHeader(user_agent): TypedHeader<headers::UserAgent>,
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
-    info!("`{}` connected", user_agent.as_str());
-
     let user_id = user.id as u64;
     let receive = if let Some(sender) = state.users.get(&user_id) {
         info!("user {} subscribed", user_id);

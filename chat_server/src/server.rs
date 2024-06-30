@@ -3,7 +3,7 @@ use anyhow::Result;
 use tokio::net::TcpListener;
 use tracing::info;
 
-use crate::{config::AppConfig, router::get_router};
+use crate::{config::AppConfig, router::get_router, state::AppState};
 
 pub async fn run() -> Result<()> {
     let config = AppConfig::load()?;
@@ -11,8 +11,8 @@ pub async fn run() -> Result<()> {
     let host = &config.server.host;
     let port = &config.server.port;
     let addr = format!("{}:{}", host, port);
-
-    let app = get_router(config).await?;
+    let state = AppState::try_new(config).await?;
+    let app = get_router(state).await?;
 
     let listener = TcpListener::bind(&addr).await?;
     info!("listening on {}", addr);

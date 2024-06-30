@@ -1,7 +1,8 @@
 mod config;
 mod error;
 mod notify;
-pub use notify::{setup_pg_listener, AppEvent};
+pub use config::AppConfig;
+pub use notify::AppEvent;
 
 use std::{ops::Deref, sync::Arc};
 
@@ -13,7 +14,6 @@ use axum::{
     Router,
 };
 use chat_core::{verify_token, DecodingKey, TokenVerifier, User};
-use config::AppConfig;
 use dashmap::DashMap;
 use error::AppError;
 
@@ -35,16 +35,17 @@ pub struct AppStateInner {
     pub config: AppConfig,
 }
 
-pub fn get_router_with_state() -> Result<(Router, AppState), AppError> {
-    let config = AppConfig::load()?;
+pub async fn get_router(config: AppConfig) -> Result<Router, AppError> {
     let state = AppState::try_new(config)?;
+    notify::setup_pg_listener(state.clone()).await?;
+
     let router = Router::new()
         .route("/events", get(sse_handler))
         .layer(from_fn_with_state(state.clone(), verify_token::<AppState>))
         .route("/", get(index))
         .with_state(state.clone());
 
-    Ok((router, state))
+    Ok(router)
 }
 
 async fn index() -> impl IntoResponse {

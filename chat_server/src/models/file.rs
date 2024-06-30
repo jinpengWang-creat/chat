@@ -50,7 +50,7 @@ impl FromStr for ChatFile {
         let ws_id = parts[0]
             .parse::<u64>()
             .map_err(|_| AppError::ChatFile(format!("Invalid workspace id: {:?}", parts[0])))?;
-        let (ext, part3) = parts[3].rsplit_once('.').ok_or(AppError::ChatFile(format!(
+        let (part3, ext) = parts[3].rsplit_once('.').ok_or(AppError::ChatFile(format!(
             "Invalid file name: {}",
             parts[3]
         )))?;

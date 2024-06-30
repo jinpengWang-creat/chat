@@ -58,8 +58,8 @@ impl AppConfig {
     // 4 is the highest priority and 1 is the lowest priority
     pub fn load() -> Result<Self, AppError> {
         let mut builder = ConfigBuilder::<DefaultState>::default();
-        if File::open("config.yml").is_ok() {
-            builder = builder.add_source(config::File::with_name("config"));
+        if File::open("notify.yml").is_ok() {
+            builder = builder.add_source(config::File::with_name("notify"));
         }
         if File::open("etc/app/config.yml").is_ok() {
             builder = builder.add_source(config::File::with_name("etc/app/config"));

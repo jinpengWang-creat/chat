@@ -6,15 +6,13 @@ use axum::{
 use chat_core::verify_token;
 
 use crate::{
-    config::AppConfig,
     error::AppError,
     handlers::*,
     middlewares::{set_layer, verify_is_chat_member},
     state::AppState,
 };
 
-pub async fn get_router(config: AppConfig) -> Result<Router, AppError> {
-    let state = AppState::try_new(config).await?;
+pub async fn get_router(state: AppState) -> Result<Router, AppError> {
     let chats = Router::new()
         .route(
             "/:id",

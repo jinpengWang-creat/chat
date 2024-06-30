@@ -1,0 +1,8 @@
+server:
+  port: 8080
+  base_dir: /tmp/chat_server
+auth:
+  pk: |
+    -----BEGIN PUBLIC KEY-----
+    MCowBQYDK2VwAyEAfM+lwNHj6TRJ3EGP38lIJcOo9Dlt2u2JzcwWMbu7jQY=
+    -----END PUBLIC KEY-----

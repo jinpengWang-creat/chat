@@ -1,9 +1,12 @@
 [workspace]
-members = ["chat_server", "notify_server", "chat_core"]
+members = ["chat_server", "notify_server", "chat_core", "chat_test"]
 resolver = "2"
 
 [workspace.dependencies]
 chat-core = { path = "./chat_core" }
+chat-server = { path = "./chat_server" }
+notify-server = { path = "./notify_server" }
+chat-test = { path = "./chat_test" }
 anyhow = "1.0.86"
 serde = { version = "1.0.203", features = ["derive"] }
 serde_yaml = "0.9.34"

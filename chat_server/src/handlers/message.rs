@@ -2,7 +2,7 @@ use std::fs;
 
 use axum::{
     extract::{Multipart, Path, Query, State},
-    http::{header::CONTENT_TYPE, HeaderMap, HeaderValue},
+    http::{header::CONTENT_TYPE, HeaderMap, HeaderValue, StatusCode},
     response::IntoResponse,
     Extension, Json,
 };
@@ -27,7 +27,7 @@ pub async fn send_message_handler(
     let message = app_state
         .create_message(create_message, id, user.id as u64)
         .await?;
-    Ok(Json(message))
+    Ok((StatusCode::CREATED, Json(message)))
 }
 
 pub async fn list_message_handler(
@@ -36,7 +36,7 @@ pub async fn list_message_handler(
     Query(list_message): Query<ListMessage>,
 ) -> Result<impl IntoResponse, AppError> {
     let messages = app_state.list_message(id, list_message).await?;
-    Ok(Json(messages))
+    Ok((StatusCode::OK, Json(messages)))
 }
 
 pub async fn file_handler(

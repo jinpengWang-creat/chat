@@ -39,7 +39,10 @@ impl AppState {
             }
             let chat_file = ChatFile::from_str(file)?;
             if !chat_file.path(base_dir).exists() {
-                return Err(AppError::CreateMessage("File not found".to_string()));
+                return Err(AppError::CreateMessage(format!(
+                    "File: {:?} not found",
+                    file
+                )));
             }
         }
 
@@ -136,7 +139,7 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
-            "create message error: File not found"
+            "create message error: File: \"/files/1/3es/32e/jis2234jisowe.txt\" not found"
         );
 
         // test create message
